@@ -28,3 +28,15 @@ pre {
 .w-50 {
     min-width: 300px;
 }
+#proveyentesSection {
+    border: 2px solid #ffc107;
+    background: #fffbe6;
+    transition: opacity 0.5s;
+    max-width: 700px;
+}
+#exportBtn, #clearButton {
+    transition: opacity 0.5s;
+}
+.w-50 + .w-50 {
+    margin-left: 2rem;
+}

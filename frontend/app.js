@@ -190,7 +190,6 @@ function renderBarChart(labels, data) {
 
 function animateWindowResize(targetWidth, targetHeight, duration = 400) {
     if (!window.pywebview) return;
-    // Get current size from pywebview API
     window.pywebview.api.get_window_size().then(size => {
         let startWidth = size.width;
         let startHeight = size.height;
@@ -202,6 +201,11 @@ function animateWindowResize(targetWidth, targetHeight, duration = 400) {
             let newWidth = Math.round(startWidth + (targetWidth - startWidth) * progress);
             let newHeight = Math.round(startHeight + (targetHeight - startHeight) * progress);
             window.pywebview.api.set_window_size(newWidth, newHeight);
+            // Center window after resizing
+            if (progress === 1) {
+                // Get screen size and center
+                window.pywebview.api.center_window(newWidth, newHeight);
+            }
             if (progress < 1) {
                 window.requestAnimationFrame(step);
             }
@@ -210,13 +214,40 @@ function animateWindowResize(targetWidth, targetHeight, duration = 400) {
     });
 }
 
+function showActions() {
+    document.getElementById('exportBtn').classList.remove('d-none');
+    document.getElementById('clearButton').classList.remove('d-none');
+    document.getElementById('proveyentesSection').classList.remove('d-none');
+    // Optionally animate
+    document.getElementById('exportBtn').style.opacity = 0;
+    document.getElementById('clearButton').style.opacity = 0;
+    document.getElementById('proveyentesSection').style.opacity = 0;
+    setTimeout(() => {
+        document.getElementById('exportBtn').style.transition = "opacity 0.5s";
+        document.getElementById('clearButton').style.transition = "opacity 0.5s";
+        document.getElementById('proveyentesSection').style.transition = "opacity 0.5s";
+        document.getElementById('exportBtn').style.opacity = 1;
+        document.getElementById('clearButton').style.opacity = 1;
+        document.getElementById('proveyentesSection').style.opacity = 1;
+    }, 50);
+}
+
+function hideActions() {
+    document.getElementById('exportBtn').classList.add('d-none');
+    document.getElementById('clearButton').classList.add('d-none');
+    document.getElementById('proveyentesSection').classList.add('d-none');
+    document.getElementById('exportBtn').style.opacity = '';
+    document.getElementById('clearButton').style.opacity = '';
+    document.getElementById('proveyentesSection').style.opacity = '';
+}
+
 document.getElementById('selectFileBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.read_data('');
         document.getElementById('summary').style.display = 'block';
         const summary = parseSummary(result);
         renderDashboard(summary);
-        // Animate window resize to larger size
+        showActions();
         animateWindowResize(1400, 1000, 400);
     } else {
         alert('pywebview API no disponible');
@@ -232,17 +263,32 @@ document.getElementById('exportBtn').onclick = async function() {
     }
 };
 
+document.getElementById('exportPdfBtn').onclick = async function() {
+    const nProveyentes = parseInt(document.getElementById('proveyentesInput').value);
+    if (!nProveyentes || nProveyentes < 1) {
+        alert('Ingrese un número válido de Proveyentes.');
+        return;
+    }
+    if (window.pywebview) {
+        const result = await window.pywebview.api.export_pdf(nProveyentes);
+        alert(result);
+    } else {
+        alert('pywebview API no disponible');
+    }
+};
+
 document.getElementById('clearButton').onclick = function() {
     document.getElementById('summary').style.display = 'none';
     document.getElementById('summary-text').textContent = '';
     document.getElementById('period-header').textContent = '';
     document.getElementById('top-titles-table').innerHTML = '';
+    hideActions();
     if (pieChart) pieChart.destroy();
     if (barChart) barChart.destroy();
     animateWindowResize(1200, 933, 400);
 };
 
-// Add pywebview API methods for window size
+// Add pywebview API methods for window size and centering
 if (window.pywebview) {
     window.pywebview.api.get_window_size = function() {
         return new Promise(resolve => {
@@ -253,5 +299,13 @@ if (window.pywebview) {
     window.pywebview.api.set_window_size = function(width, height) {
         // Dummy fallback if not implemented in backend
         window.resizeTo(width, height);
+    };
+    window.pywebview.api.center_window = function(width, height) {
+        // Dummy fallback if not implemented in backend
+        const screenW = window.screen.width;
+        const screenH = window.screen.height;
+        const x = Math.max(0, Math.round((screenW - width) / 2));
+        const y = Math.max(0, Math.round((screenH - height) / 2));
+        window.moveTo(x, y);
     };
 }

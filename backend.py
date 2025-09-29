@@ -4,6 +4,10 @@ from datetime import datetime
 from openpyxl import Workbook
 from io import StringIO
 import webview
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 
 class Api:
     def __init__(self):
@@ -95,6 +99,81 @@ class Api:
         else:
             return "No hay datos cargados para exportar."
 
+    def assign_proveyentes(self, records, n_proveyentes):
+        groups = [[] for _ in range(n_proveyentes)]
+        for idx, record in enumerate(records):
+            groups[idx % n_proveyentes].append(record)
+        return groups
+
+    def export_pdf(self, n_proveyentes):
+        if self.data is None:
+            return "No hay datos cargados para exportar."
+        try:
+            # Prompt user for save location
+            file_types = ["Archivos PDF (*.pdf)"]
+            default_filename = f"proveyentes_{datetime.now().strftime('%d-%m-%Y_%H-%Mhs')}.pdf"
+            save_path = webview.windows[0].create_file_dialog(
+                webview.SAVE_DIALOG, allow_multiple=False, file_types=file_types, save_filename=default_filename
+            )
+            if isinstance(save_path, (tuple, list)):
+                save_path = save_path[0] if save_path else None
+            if not save_path:
+                return "Exportación cancelada por el usuario."
+
+            # Prepare records for assignment (use same columns as Excel export)
+            listados = self.create_listados(self.data)
+            # Only take up to n_proveyentes * 15 records
+            total_needed = n_proveyentes * 15
+            selected_records = listados[:total_needed]
+            groups = self.assign_proveyentes(selected_records, n_proveyentes)
+
+            # Generate PDF
+            doc = SimpleDocTemplate(save_path, pagesize=A4)
+            elements = []
+            styles = getSampleStyleSheet()
+            for i, group in enumerate(groups):
+                elements.append(Paragraph(f"Listado {i+1}", styles['Heading2']))
+                if not group:
+                    elements.append(Paragraph("Sin registros asignados.", styles['Normal']))
+                else:
+                    data = [["Título", "Expte", "Recibido", "Presentante", "Días corridos"]]
+                    # Truncate Título and adjust Presentante font size
+                    processed_group = []
+                    for row in group:
+                        titulo = row[0]
+                        if len(titulo) > 42:
+                            titulo = titulo[:42] + "..."
+                        presentante = row[3]
+                        processed_group.append([titulo, row[1], row[2], presentante, row[4]])
+                    data += processed_group
+                    page_width = A4[0]
+                    col_widths = [page_width * 0.32, page_width * 0.17, page_width * 0.17, page_width * 0.17, page_width * 0.17]
+                    table = Table(data, repeatRows=1, colWidths=col_widths)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+                        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+                        ('ALIGN', (0,0), (0,-1), 'LEFT'),  # Título column left
+                        ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+                        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+                        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0,1), (0,-1), 7),   # Título records smaller font
+                        ('FONTSIZE', (1,1), (2,-1), 10),  # Expte and Recibido records bigger font
+                        ('FONTSIZE', (3,1), (3,-1), 7),   # Presentante records smaller font
+                        ('FONTSIZE', (4,1), (4,-1), 10),  # Días corridos records bigger font
+                        ('FONTSIZE', (0,0), (-1,0), 10),  # Header bigger font
+                        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                        ('VALIGN', (0,1), (-1,-1), 'TOP'),
+                        ('WORDWRAP', (0,1), (0,-1), 'CJK'),  # Only Título column wrapped
+                    ]))
+                    elements.append(table)
+                elements.append(Spacer(1, 18))
+                if (i + 1) % 2 == 0 and (i + 1) < len(groups):
+                    elements.append(PageBreak())
+            doc.build(elements)
+            return f"PDF guardado como '{save_path}'."
+        except Exception as e:
+            return f"Error al exportar PDF: {e}"
+
     def get_window_size(self):
         win = webview.windows[0]
         return {'width': win.width, 'height': win.height}
@@ -102,4 +181,12 @@ class Api:
     def set_window_size(self, width, height):
         win = webview.windows[0]
         win.resize(width, height)
+        return True
+        win = webview.windows[0]
+        screen = win.screen
+        if hasattr(screen, 'width') and hasattr(screen, 'height'):
+            x = max(0, int((screen.width - width) / 2))
+            y = max(0, int((screen.height - height) / 2))
+            win.move(x, y)
+        return True
         return True

@@ -15,21 +15,32 @@
 <body>
     <div class="container mt-5 text-center">
         <h2>Listado de escritos</h2>
-        <div class="mb-4">
-            <button type="button" class="btn btn-primary" id="selectFileBtn">Seleccionar Archivo</button>
-            <button type="button" class="btn btn-success" id="exportBtn">
-                Exportar listado
+        <div class="mb-4 d-flex flex-column flex-md-row align-items-center justify-content-center" id="mainActions">
+            <button type="button" class="btn btn-primary mb-2 mb-md-0" id="selectFileBtn">Seleccionar Archivo<br>de Forum</button>
+            <button type="button" class="btn btn-success ms-2 d-none mb-2 mb-md-0" id="exportBtn">
+                Exportar listado en<br>orden cronológico
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-spreadsheet-fill ms-1" viewBox="0 0 16 16">
                     <path d="M6 12v-2h3v2z"/>
                     <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M3 9h10v1h-3v2h3v1h-3v2H9v-2H6v2H5v-2H3v-1h2v-2H3z"/>
                 </svg>
             </button>
-            <button type="button" class="btn btn-secondary" id="clearButton">
+            <button type="button" class="btn btn-secondary ms-2 d-none mb-2 mb-md-0" id="clearButton">
                 Limpiar
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3 ms-1" viewBox="0 0 16 16">
                     <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                 </svg>
             </button>
+        </div>
+        <!-- Proveyentes section, hidden initially -->
+        <div id="proveyentesSection" class="d-none mt-4 p-3 border rounded shadow-sm bg-light" style="max-width: 700px; margin: 0 auto;">
+            <div class="d-flex align-items-center justify-content-center">
+                <span class="me-2 fw-bold">Dividir entre</span>
+                <input type="number" min="1" class="form-control d-inline-block w-auto mx-2" id="proveyentesInput" style="width: 70px;">
+                <span class="ms-2 fw-bold">proveyentes</span>
+                <button type="button" class="btn btn-warning ms-3" id="exportPdfBtn">
+                    Exportar PDF
+                </button>
+            </div>
         </div>
     </div>
 
@@ -59,7 +70,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="w-50 mt-5">
+            <div class="w-50 mt-5 ms-4">
                 <canvas id="topTitlesBarChart"></canvas>
             </div>
         </div>
@@ -71,4 +82,5 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+</html>
 </html>
