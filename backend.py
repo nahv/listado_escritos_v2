@@ -78,11 +78,19 @@ class Api:
 
     def export_excel(self):
         if self.data is not None:
-            current_datetime = datetime.now()
-            datestamp = current_datetime.strftime("%d-%m-%Y_%H-%Mhs")
-            filename = f"listado_{datestamp}.xlsx"
-            listados = self.create_listados(self.data)
-            self.save_listados_to_excel(listados, filename)
-            return f"\n\nArchivo guardado como '{filename}'."
+            # Prompt user for save location
+            file_types = ["Archivos Excel (*.xlsx)"]
+            default_filename = f"listado_{datetime.now().strftime('%d-%m-%Y_%H-%Mhs')}.xlsx"
+            save_path = webview.windows[0].create_file_dialog(
+                webview.SAVE_DIALOG, allow_multiple=False, file_types=file_types, save_filename=default_filename
+            )
+            if isinstance(save_path, (tuple, list)):
+                save_path = save_path[0] if save_path else None
+            if save_path:
+                listados = self.create_listados(self.data)
+                self.save_listados_to_excel(listados, save_path)
+                return f"\n\nArchivo guardado como '{save_path}'."
+            else:
+                return "Exportación cancelada por el usuario."
         else:
             return "No hay datos cargados para exportar."

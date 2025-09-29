@@ -1,21 +1,32 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 30px;
+    font-family: 'Roboto', Arial, sans-serif;
     background: #f9f9f9;
 }
-h1 {
+h1, h2, h4 {
     color: #333;
 }
-button {
-    margin: 5px 10px 15px 0;
-    padding: 8px 16px;
-    font-size: 16px;
+.container {
+    max-width: 900px;
 }
 pre {
     background: #fff;
     border: 1px solid #ccc;
     padding: 15px;
-    min-height: 200px;
+    min-height: 120px;
     font-size: 15px;
     white-space: pre-wrap;
+}
+.table-striped th {
+    background: #e9ecef;
+}
+.btn-tertiary {
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ccc;
+}
+.btn-tertiary:hover {
+    background-color: #e2e2e2;
+}
+.w-50 {
+    min-width: 300px;
 }
