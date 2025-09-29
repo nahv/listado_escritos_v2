@@ -99,9 +99,47 @@ class Api:
         else:
             return "No hay datos cargados para exportar."
 
+    def merge_expedientes(self, records):
+        """
+        Merge records with the same Expediente, counting occurrences and joining Título.
+        Returns a list of merged records.
+        """
+        merged = {}
+        for row in records:
+            expte = row[1]
+            if expte not in merged:
+                merged[expte] = {
+                    "Título": row[0],
+                    "Expte": expte,
+                    "Recibido": row[2],
+                    "Presentante": row[3],
+                    "Días": row[4],
+                    "count": 1
+                }
+            else:
+                merged[expte]["count"] += 1
+                merged[expte]["Título"] += f" | {row[0]}"
+        result = []
+        for v in merged.values():
+            titulo = v["Título"]
+            if len(titulo) > 42:
+                titulo = titulo[:42] + "..."
+            if v["count"] > 1:
+                otros = v["count"] - 1
+                if otros == 1:
+                    titulo += " (+1 otro escrito)"
+                else:
+                    titulo += f" (+{otros} otros escritos)"
+            result.append([titulo, v["Expte"], v["Recibido"], v["Presentante"], v["Días"]])
+        return result
+
     def assign_proveyentes(self, records, n_proveyentes):
+        """
+        Assign merged records to proveyentes in round-robin, keeping all presentaciones for the same Expediente together.
+        """
+        merged_records = self.merge_expedientes(records)
         groups = [[] for _ in range(n_proveyentes)]
-        for idx, record in enumerate(records):
+        for idx, record in enumerate(merged_records):
             groups[idx % n_proveyentes].append(record)
         return groups
 
@@ -122,7 +160,7 @@ class Api:
 
             # Prepare records for assignment (use same columns as Excel export)
             listados = self.create_listados(self.data)
-            # Only take up to n_proveyentes * 15 records
+            # Only take up to n_proveyentes * 15 records (before merging)
             total_needed = n_proveyentes * 15
             selected_records = listados[:total_needed]
             groups = self.assign_proveyentes(selected_records, n_proveyentes)
@@ -136,7 +174,7 @@ class Api:
                 if not group:
                     elements.append(Paragraph("Sin registros asignados.", styles['Normal']))
                 else:
-                    data = [["Título", "Expte", "Recibido", "Presentante", "Días corridos"]]
+                    data = [["Título", "Expediente", "Fecha", "Presentante", "Días corridos"]]
                     processed_group = []
                     for row in group:
                         titulo = row[0]
