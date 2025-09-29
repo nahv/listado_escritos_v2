@@ -188,12 +188,36 @@ function renderBarChart(labels, data) {
     });
 }
 
+function animateWindowResize(targetWidth, targetHeight, duration = 400) {
+    if (!window.pywebview) return;
+    // Get current size from pywebview API
+    window.pywebview.api.get_window_size().then(size => {
+        let startWidth = size.width;
+        let startHeight = size.height;
+        let startTime = null;
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            let progress = Math.min((timestamp - startTime) / duration, 1);
+            let newWidth = Math.round(startWidth + (targetWidth - startWidth) * progress);
+            let newHeight = Math.round(startHeight + (targetHeight - startHeight) * progress);
+            window.pywebview.api.set_window_size(newWidth, newHeight);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        }
+        window.requestAnimationFrame(step);
+    });
+}
+
 document.getElementById('selectFileBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.read_data('');
         document.getElementById('summary').style.display = 'block';
         const summary = parseSummary(result);
         renderDashboard(summary);
+        // Animate window resize to larger size
+        animateWindowResize(1400, 1000, 400);
     } else {
         alert('pywebview API no disponible');
     }
@@ -215,4 +239,19 @@ document.getElementById('clearButton').onclick = function() {
     document.getElementById('top-titles-table').innerHTML = '';
     if (pieChart) pieChart.destroy();
     if (barChart) barChart.destroy();
+    animateWindowResize(1200, 933, 400);
 };
+
+// Add pywebview API methods for window size
+if (window.pywebview) {
+    window.pywebview.api.get_window_size = function() {
+        return new Promise(resolve => {
+            // Dummy fallback if not implemented in backend
+            resolve({ width: window.innerWidth, height: window.innerHeight });
+        });
+    };
+    window.pywebview.api.set_window_size = function(width, height) {
+        // Dummy fallback if not implemented in backend
+        window.resizeTo(width, height);
+    };
+}

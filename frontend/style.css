@@ -19,10 +19,8 @@ pre {
 .table-striped th {
     background: #e9ecef;
 }
-.btn-tertiary {
-    background-color: #f5f5f5;
-    color: #333;
-    border: 1px solid #ccc;
+.w-50 {
+    min-width: 300px;
 }
 .btn-tertiary:hover {
     background-color: #e2e2e2;

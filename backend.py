@@ -94,3 +94,12 @@ class Api:
                 return "Exportación cancelada por el usuario."
         else:
             return "No hay datos cargados para exportar."
+
+    def get_window_size(self):
+        win = webview.windows[0]
+        return {'width': win.width, 'height': win.height}
+
+    def set_window_size(self, width, height):
+        win = webview.windows[0]
+        win.resize(width, height)
+        return True
