@@ -146,7 +146,6 @@ class Api:
                         processed_group.append([titulo, row[1], row[2], presentante, row[4]])
                     data += processed_group
                     page_width = A4[0]
-                    # Make Recibido thinner, leave space on right
                     col_widths = [
                         page_width * 0.32,  # Título
                         page_width * 0.17,  # Expte
@@ -155,7 +154,8 @@ class Api:
                         page_width * 0.15   # Días corridos
                     ]
                     table = Table(data, repeatRows=1, colWidths=col_widths)
-                    table.setStyle(TableStyle([
+                    # Striped style for rows
+                    table_style = [
                         ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
                         ('TEXTCOLOR', (0,0), (-1,0), colors.black),
                         ('ALIGN', (0,0), (0,-1), 'LEFT'),  # Título column left
@@ -170,7 +170,12 @@ class Api:
                         ('BOTTOMPADDING', (0,0), (-1,0), 8),
                         ('VALIGN', (0,1), (-1,-1), 'TOP'),
                         ('WORDWRAP', (0,1), (0,-1), 'CJK'),  # Only Título column wrapped
-                    ]))
+                    ]
+                    # Add striped background for rows
+                    for row_idx in range(1, len(data)):
+                        if row_idx % 2 == 1:
+                            table_style.append(('BACKGROUND', (0,row_idx), (-1,row_idx), colors.whitesmoke))
+                    table.setStyle(TableStyle(table_style))
                     elements.append(table)
                 elements.append(Spacer(1, 18))
                 if (i + 1) % 2 == 0 and (i + 1) < len(groups):
