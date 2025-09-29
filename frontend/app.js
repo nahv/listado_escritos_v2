@@ -270,8 +270,8 @@ document.getElementById('exportPdfBtn').onclick = async function() {
         return;
     }
     if (window.pywebview) {
-        const result = await window.pywebview.api.export_pdf(nProveyentes);
-        alert(result);
+        await window.pywebview.api.export_pdf(nProveyentes);
+        // No alert after export
     } else {
         alert('pywebview API no disponible');
     }

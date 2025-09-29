@@ -137,7 +137,6 @@ class Api:
                     elements.append(Paragraph("Sin registros asignados.", styles['Normal']))
                 else:
                     data = [["Título", "Expte", "Recibido", "Presentante", "Días corridos"]]
-                    # Truncate Título and adjust Presentante font size
                     processed_group = []
                     for row in group:
                         titulo = row[0]
@@ -147,7 +146,14 @@ class Api:
                         processed_group.append([titulo, row[1], row[2], presentante, row[4]])
                     data += processed_group
                     page_width = A4[0]
-                    col_widths = [page_width * 0.32, page_width * 0.17, page_width * 0.17, page_width * 0.17, page_width * 0.17]
+                    # Make Recibido thinner, leave space on right
+                    col_widths = [
+                        page_width * 0.32,  # Título
+                        page_width * 0.17,  # Expte
+                        page_width * 0.10,  # Recibido (thinner)
+                        page_width * 0.15,  # Presentante
+                        page_width * 0.15   # Días corridos
+                    ]
                     table = Table(data, repeatRows=1, colWidths=col_widths)
                     table.setStyle(TableStyle([
                         ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
