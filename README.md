@@ -1,8 +1,8 @@
 # 📑 Listados Judiciales App
 
-Aplicación de escritorio desarrollada en **Python** y **PyWebview** que procesa archivos crudos del Excel de escritos recibidos que se extrae de Forum Institucional del Poder Judicial de Corrientes, genera resúmenes estadísticos y permite exportar listados organizados en **Excel** y **PDF**.  
+Aplicación de escritorio desarrollada en **Python** y **PyWebview** que procesa archivos crudos del Excel de escritos recibidos que se extrae de Forum Institucional del Poder Judicial de Corrientes, genera un estadístico y permite exportar listados organizados en **Excel** y **PDF**.  
 
-Fue diseñada para facilitar el trabajo de los proveyentes en el Juzgado Civil y Comercial 1 del Poder Judicial de la provincia de Corrientes, Argentina, agilizando la gestión de escritos, proyectos y expedientes.
+Fue diseñada para facilitar la repartición del trabajo de los proveyentes en el Juzgado Civil y Comercial 1 del Poder Judicial de la provincia de Corrientes, Argentina.
 
 ---
 
