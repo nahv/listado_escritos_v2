@@ -1,4 +1,4 @@
-from tinydb import TinyDB
+# from tinydb import TinyDB
 import pandas as pd
 from datetime import datetime
 from openpyxl import Workbook
@@ -10,14 +10,15 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 class Api:
-    def __init__(self):
-        self.db = TinyDB('db.json')
-        self.data = None
+        #DB PARA FUTURAS IMPLEMENTACIONES
+        # def __init__(self):
+        # self.db = TinyDB('db.json')
+        # self.data = None
 
     def read_data(self, file_path):
         # If no file_path, open file dialog
         if not file_path:
-            file_types = ["Archivos Excel (*.xlsx)"]  # or ["*.xlsx"]
+            file_types = ["Archivos Excel (*.xlsx)"]
             file_path = webview.windows[0].create_file_dialog(
                 webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types
             )
@@ -200,11 +201,11 @@ class Api:
                         ('ALIGN', (1,0), (-1,-1), 'CENTER'),
                         ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
                         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0,1), (0,-1), 7),   # Título records smaller font
-                        ('FONTSIZE', (1,1), (2,-1), 10),  # Expte and Recibido records bigger font
-                        ('FONTSIZE', (3,1), (3,-1), 7),   # Presentante records smaller font
-                        ('FONTSIZE', (4,1), (4,-1), 10),  # Días corridos records bigger font
-                        ('FONTSIZE', (0,0), (-1,0), 10),  # Header bigger font
+                        ('FONTSIZE', (0,1), (0,-1), 7),   # Título 
+                        ('FONTSIZE', (1,1), (2,-1), 10),  # Expte and Recibido 
+                        ('FONTSIZE', (3,1), (3,-1), 7),   # Presentante 
+                        ('FONTSIZE', (4,1), (4,-1), 10),  # Días corridos 
+                        ('FONTSIZE', (0,0), (-1,0), 10),  # Header 
                         ('BOTTOMPADDING', (0,0), (-1,0), 8),
                         ('VALIGN', (0,1), (-1,-1), 'TOP'),
                         ('WORDWRAP', (0,1), (0,-1), 'CJK'),  # Only Título column wrapped
