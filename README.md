@@ -26,14 +26,16 @@ Fue diseñada para facilitar la repartición del trabajo de los proveyentes en e
 - **Exportación a Excel**  
   Generación de un listado limpio y estructurado en orden cronológico.  
 
-- **Exportación a PDF con Proveyentes**  
-  - Distribuye las fechas indicadas en grupos de 15 escritos para proveer de a varios proveyentes en forma pareja.  
-  - Fusiona los escritos que pertenecen al mismo expediente, para evitar asginar escritos del mismo expediente a diferentes proveyentes. 
+- **Exportación a PDF con repartición de fechas**  
+  - Distribuye las fechas indicadas en grupos de 15 escritos para proveer de a varios proveyentes en forma pareja. 
+  - Fusiona los escritos que pertenecen al mismo expediente, para evitar asginar escritos de la misma causa a diferentes proveyentes. 
 
 ---
 <img width="1512" height="1112" alt="Screenshot 2025-09-30 at 2 10 19 PM" src="https://github.com/user-attachments/assets/228e82f9-e9f6-481d-aed4-8e5a9d9c47d7" />
 
 
+
+🔗 [Descargar ejecutable de prueba](https://drive.google.com/file/d/1HovopvNSddan1wiDczQ91FN6kogDDWsN/view?usp=sharing)
 
 ## 🛠️ Tecnologías utilizadas
 
@@ -67,7 +69,7 @@ proyecto/
    cd listado_escritos
    ```
 
-2. **Crear y activar un entorno virtual**  
+2. **Crear y activar entorno virtual**  
    ```bash
    python -m venv venv
    source venv/bin/activate   # Linux/Mac
@@ -90,8 +92,7 @@ proyecto/
 
 2. Seleccionar un archivo `.xlsx` mediante el cuadro de diálogo.  
 
-3. Opciones disponibles:  
-   - **Generar estadísticas** – vista rápida en la interfaz.  
+3. Opciones disponibles:
    - **Exportar a Excel** – guarda un listado estructurado.  
    - **Exportar a PDF (Proveyentes)** – divide en N grupos de 15 y genera reportes en PDF.  
 
