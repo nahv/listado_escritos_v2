@@ -31,6 +31,9 @@ Fue diseñada para facilitar la repartición del trabajo de los proveyentes en e
   - Fusiona los escritos que pertenecen al mismo expediente, para evitar asginar escritos del mismo expediente a diferentes proveyentes. 
 
 ---
+<img width="1512" height="1112" alt="Screenshot 2025-09-30 at 2 10 19 PM" src="https://github.com/user-attachments/assets/228e82f9-e9f6-481d-aed4-8e5a9d9c47d7" />
+
+
 
 ## 🛠️ Tecnologías utilizadas
 
