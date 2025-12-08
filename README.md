@@ -101,7 +101,7 @@ proyecto/
 ## 📊 Flujo de trabajo típico
 
 - **Entrada:** Archivo Excel con registros judiciales.  
-- **Proceso:** Detección de expedientes, escritos, proyectos y transferencias.  
+- **Proceso:** Detección de expedientes, escritos, proyectos y profesionales.
 - **Salida:**  
   - Excel: `listado_dd-mm-YYYY_HH-MMhs.xlsx`  
   - PDF: `proveyentes_dd-mm-YYYY_HH-MMhs.pdf`  

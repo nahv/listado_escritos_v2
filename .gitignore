@@ -41,9 +41,9 @@ Thumbs.db
 # Excel exports
 listado_*.xlsx
 
-# Node artifacts (if any)
+# Node artifacts
 node_modules/
 
-# Frontend build artifacts (if any)
+# Frontend build artifacts
 frontend/dist/
 frontend/node_modules/
