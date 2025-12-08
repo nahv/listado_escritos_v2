@@ -87,6 +87,28 @@
 
         <div class="mt-5 d-flex">
             <div class="w-50">
+                <h4>Cantidad de presentaciones por fecha</h4>
+                <table class="table table-striped" style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Cargo</th>
+                            <th>Escritos</th>
+                            <th>Proyectos</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="presentaciones-by-date-table">
+                        <!-- Rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="w-50 mt-5 ms-4">
+                <canvas id="datesBarChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mt-5 d-flex">
+            <div class="w-50">
                 <h4>Escritos más repetidos</h4>
                 <table class="table table-striped" style="font-size: 0.9rem;">
                     <thead>
@@ -104,6 +126,32 @@
                 <canvas id="topTitlesBarChart"></canvas>
             </div>
         </div>
+    </div>
+
+    <!-- Modal for continuous export -->
+    <div class="modal fade" id="continuousExportModal" tabindex="-1" aria-labelledby="continuousExportLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="continuousExportLabel">Exportar el resto de las fechas en orden cronológico</h5>
+            <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="continuousStartDate" class="form-label">Fecha inicio</label>
+              <input type="date" id="continuousStartDate" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label for="continuousNumListados" class="form-label">Cantidad de Listados</label>
+              <input type="number" id="continuousNumListados" class="form-control" min="1" value="1">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" id="doContinuousExportBtn" class="btn btn-primary">Exportar PDF</button>
+            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Cancelar</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="app.js"></script>

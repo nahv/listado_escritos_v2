@@ -9,7 +9,24 @@ function formatDate(dateString) {
 }
 
 function parseSummary(info) {
-    // Parse info string from backend to summary object
+    // If backend returns structured object
+    if (typeof info === 'object') {
+        return {
+            total_records: info.total_records || 0,
+            unique_exptes_count: info.unique_exptes_count || 0,
+            escritos_count: info.presentaciones_count || 0,
+            proyectos_count: info.proyectos_count || 0,
+            oldest_escrito: info.oldest_record || '',
+            days_difference: info.days_difference || 0,
+            today_date: info.today_date || '',
+            transferencias_count: info.transferencias_count || 0,
+            most_titles: info.most_titles || [],
+            period: info.period || '',
+            presentaciones_by_date: info.presentaciones_by_date || []
+        };
+    }
+
+    // Fallback to previous string parsing (unchanged)
     const lines = info.split('\n').map(l => l.trim()).filter(Boolean);
     let total_records = 0, unique_exptes_count = 0, escritos_count = 0, proyectos_count = 0;
     let oldest_escrito = '', days_difference = 0, today_date = '', transferencias_count = 0;
@@ -126,6 +143,11 @@ function renderDashboard(summary) {
     // Render pie chart
     renderPieChart(summary);
 
+    // Populate presentaciones by date table & chart
+    if (summary.presentaciones_by_date) {
+        populatePresentacionesByDateTable(summary.presentaciones_by_date);
+    }
+
     // Populate top titles table and render bar chart
     populateTopTitlesTable(summary.most_titles);
 }
@@ -188,6 +210,46 @@ function renderBarChart(labels, data) {
     });
 }
 
+// New: populate presentaciones-by-date table and bar chart
+function populatePresentacionesByDateTable(list) {
+    const tableBody = document.getElementById('presentaciones-by-date-table');
+    tableBody.innerHTML = '';
+    const labels = [];
+    const data = [];
+    list.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${item.Fecha}</td><td>${item.Escritos}</td><td>${item.Proyectos}</td><td>${item.Total}</td>`;
+        tableBody.appendChild(row);
+        labels.push(item.Fecha);
+        data.push(item.Total);
+    });
+    renderDatesBarChart(labels, data);
+}
+
+let datesBarChart;
+function renderDatesBarChart(labels, data) {
+    const ctx = document.getElementById('datesBarChart').getContext('2d');
+    if (datesBarChart) datesBarChart.destroy();
+    datesBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Presentaciones',
+                data: data,
+                backgroundColor: labels.map(() => `#${Math.floor(Math.random() * 16777215).toString(16)}`)
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                x: { title: { display: true, text: 'Fecha' } },
+                y: { title: { display: true, text: 'Total Presentaciones' }, beginAtZero: true }
+            }
+        }
+    });
+}
+
 function animateWindowResize(targetWidth, targetHeight, duration = 400) {
     if (!window.pywebview) return;
     window.pywebview.api.get_window_size().then(size => {
@@ -241,28 +303,65 @@ function hideActions() {
     document.getElementById('proveyentesSection').style.opacity = '';
 }
 
+// Notification popout for produced files
+function showDownloadPopup(filePath) {
+    const container = document.createElement('div');
+    container.style = "position:fixed;right:20px;bottom:20px;z-index:20000;background:#0d6efd;color:white;padding:14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.2);";
+    container.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div style="font-weight:600;">Archivo descargado</div>
+            <div style="margin-left:8px;">
+                <button id="openProdBtn" class="btn btn-sm btn-light">Abrir</button>
+                <button id="closeProdBtn" class="btn btn-sm btn-outline-light ms-2">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(container);
+    document.getElementById('openProdBtn').onclick = function() {
+        if (window.pywebview) {
+            window.pywebview.api.open_file(filePath);
+        }
+    };
+    document.getElementById('closeProdBtn').onclick = function() {
+        container.remove();
+    };
+    // Auto remove after 12s
+    setTimeout(() => container.remove(), 20000);
+}
+
+// Handle select file
 document.getElementById('selectFileBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.read_data('');
-        document.getElementById('summary').style.display = 'block';
-        const summary = parseSummary(result);
-        renderDashboard(summary);
-        showActions();
-        animateWindowResize(1400, 1000, 400);
+        if (result && result.status === 'ok') {
+            document.getElementById('summary').style.display = 'block';
+            const summary = parseSummary(result);
+            renderDashboard(summary);
+            showActions();
+            animateWindowResize(1400, 1000, 400);
+        } else {
+            alert(result.message || 'No se pudo leer el archivo.');
+        }
     } else {
         alert('pywebview API no disponible');
     }
 };
 
+// Excel export: show popup to open file
 document.getElementById('exportBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.export_excel();
-        // Optionally show export result somewhere, e.g. as a toast or alert
+        if (result && result.status === 'ok') {
+            showDownloadPopup(result.path);
+        } else if (result && result.status === 'error') {
+            alert(result.message);
+        }
     } else {
         alert('pywebview API no disponible');
     }
 };
 
+// Export PDF repartidas and then show modal for continuous option
 document.getElementById('exportPdfBtn').onclick = async function() {
     const nProveyentes = parseInt(document.getElementById('proveyentesInput').value);
     if (!nProveyentes || nProveyentes < 1) {
@@ -270,21 +369,72 @@ document.getElementById('exportPdfBtn').onclick = async function() {
         return;
     }
     if (window.pywebview) {
-        await window.pywebview.api.export_pdf(nProveyentes);
-        // No alert after export
+        const result = await window.pywebview.api.export_pdf(nProveyentes);
+        if (result && result.status === 'ok') {
+            showDownloadPopup(result.path);
+            // Pre-fill modal date with last_assigned_date + 1 day if provided
+            if (result.last_assigned_date) {
+                // parse dd/mm/YYYY
+                const parts = result.last_assigned_date.split('/');
+                if (parts.length === 3) {
+                    const d = parts[0].padStart(2,'0'), m = parts[1].padStart(2,'0'), y = parts[2];
+                    const dt = new Date(`${y}-${m}-${d}`);
+                    const next = new Date(dt.getTime() + 24*60*60*1000);
+                    const iso = next.toISOString().slice(0,10);
+                    document.getElementById('continuousStartDate').value = iso;
+                }
+            } else {
+                // default to tomorrow
+                const tomorrow = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
+                document.getElementById('continuousStartDate').value = tomorrow;
+            }
+            // Show modal
+            const modalEl = document.getElementById('continuousExportModal');
+            const modal = new mdb.Modal(modalEl);
+            modal.show();
+        } else {
+            alert(result.message || 'Error al exportar PDF.');
+        }
     } else {
         alert('pywebview API no disponible');
     }
 };
 
+// Hook modal export button
+document.getElementById('doContinuousExportBtn').onclick = async function() {
+    const startDate = document.getElementById('continuousStartDate').value;
+    const nListados = parseInt(document.getElementById('continuousNumListados').value) || 1;
+    if (!startDate) {
+        alert('Ingrese una fecha de inicio válida.');
+        return;
+    }
+    if (window.pywebview) {
+        const result = await window.pywebview.api.export_pdf_continuous(startDate, nListados);
+        if (result && result.status === 'ok') {
+            showDownloadPopup(result.path);
+            // hide modal
+            const modalEl = document.getElementById('continuousExportModal');
+            const modal = mdb.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        } else {
+            alert(result.message || 'Error al exportar PDF continuo.');
+        }
+    } else {
+        alert('pywebview API no disponible');
+    }
+};
+
+// Clear button
 document.getElementById('clearButton').onclick = function() {
     document.getElementById('summary').style.display = 'none';
     document.getElementById('summary-text').textContent = '';
     document.getElementById('period-header').textContent = '';
     document.getElementById('top-titles-table').innerHTML = '';
+    document.getElementById('presentaciones-by-date-table').innerHTML = '';
     hideActions();
     if (pieChart) pieChart.destroy();
     if (barChart) barChart.destroy();
+    if (datesBarChart) datesBarChart.destroy();
     animateWindowResize(1200, 933, 400);
 };
 
@@ -307,5 +457,14 @@ if (window.pywebview) {
         const x = Math.max(0, Math.round((screenW - width) / 2));
         const y = Math.max(0, Math.round((screenH - height) / 2));
         window.moveTo(x, y);
+    };
+    window.pywebview.api.open_file = window.pywebview.api.open_file || function(path) {
+        return new Promise(resolve => {
+            // Fallback: try to open in new tab if path is a file:// URL (best-effort)
+            try {
+                window.open("file://" + path);
+            } catch (e) {}
+            resolve({ status: 'ok' });
+        });
     };
 }
