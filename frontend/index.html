@@ -12,37 +12,171 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
     <style>
-      /* Splash screen overlay */
+      /* Enhanced Splash screen overlay */
       #splash {
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: #003366;
+        background: linear-gradient(135deg, #003366 0%, #004d99 50%, #003d7a 100%);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         color: white;
-        font-family: sans-serif;
-        font-size: 24px;
+        font-family: 'Roboto', sans-serif;
         z-index: 9999;
         opacity: 1;
         transition: opacity 0.8s ease;
       }
+      
       #splash.fade-out {
         opacity: 0;
         pointer-events: none;
       }
-      #splash img {
-        width: 120px;
-        margin-top: 20px;
-      }
+      
       body.loaded #splash {
         display: none;
+      }
+
+      /* Splash content container */
+      #splash-content {
+        text-align: center;
+        animation: slideUp 0.8s ease-out 0.3s both;
+      }
+
+      /* Animated logo/icon */
+      #splash-icon {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 20px;
+        animation: iconPulse 2s ease-in-out infinite;
+      }
+
+      /* Title animation */
+      #splash-title {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        letter-spacing: 1px;
+        animation: fadeInDown 0.8s ease-out 0.5s both;
+      }
+
+      /* Subtitle animation */
+      #splash-subtitle {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 30px;
+        animation: fadeInUp 0.8s ease-out 0.7s both;
+      }
+
+      /* Loading spinner */
+      .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        animation: fadeInUp 0.8s ease-out 0.9s both;
+      }
+
+      .spinner-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: white;
+        animation: spinnerBounce 1.4s infinite ease-in-out;
+      }
+
+      .spinner-dot:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+
+      .spinner-dot:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+
+      .spinner-dot:nth-child(3) {
+        animation-delay: 0s;
+      }
+
+      /* Animations */
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes iconPulse {
+        0%, 100% {
+          transform: scale(1);
+          filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+        }
+        50% {
+          transform: scale(1.1);
+          filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
+        }
+      }
+
+      @keyframes spinnerBounce {
+        0%, 80%, 100% {
+          transform: scale(0);
+          opacity: 0.5;
+        }
+        40% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
     </style>
 </head>
 <body>
+    <!-- Enhanced Splash Screen -->
+    <div id="splash">
+      <div id="splash-content">
+        <!-- Icon: Document/File SVG -->
+        <svg id="splash-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
+          <path d="M4.5 6.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 10h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+        
+        <h1 id="splash-title">Listado de Escritos</h1>
+        <p id="splash-subtitle">Cargando aplicación...</p>
+        
+        <!-- Loading spinner -->
+        <div class="spinner-container">
+          <div class="spinner-dot"></div>
+          <div class="spinner-dot"></div>
+          <div class="spinner-dot"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="container mt-5 text-center">
         <h2>Listado de escritos</h2>
         <div class="mb-4 d-flex flex-column flex-md-row align-items-center justify-content-center" id="mainActions">

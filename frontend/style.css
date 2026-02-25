@@ -37,3 +37,18 @@ pre {
 .w-50 + .w-50 {
     margin-left: 4rem;
 }
+/* Enhanced date column styling */
+#presentaciones-by-date-table td:first-child {
+    font-weight: 500;
+    font-size: 1.05rem;
+}
+#presentaciones-by-date-table small {
+    display: block;
+    margin-top: 2px;
+    color: #666;
+    font-weight: normal;
+}
+/* Splash screen transitions */
+#splash {
+    transition: opacity 0.8s ease;
+}

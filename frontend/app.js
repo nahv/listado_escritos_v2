@@ -106,7 +106,7 @@ function renderDashboard(summary) {
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-calendar3 mb-2" viewBox="0 0 16 16">
   <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2M1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857z"/>
   <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
-</svg> Período ${summary.period} <br><br>
+</svg> ${summary.period} <br><br>
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-calendar2-event mb-2" viewBox="0 0 16 16">
   <path d="M11 7.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
   <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/>
@@ -114,7 +114,7 @@ function renderDashboard(summary) {
 </svg>
 <strong>${summary.days_difference} días corridos</strong>
 <br> del primer escrito (${summary.oldest_escrito})
-<br> a la fecha (${summary.today_date})
+<br> a hoy (${summary.today_date})
 `;
 
     // Update summary text with icons and order
@@ -216,11 +216,21 @@ function populatePresentacionesByDateTable(list) {
     tableBody.innerHTML = '';
     const labels = [];
     const data = [];
+    
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    
     list.forEach(item => {
+        // Parse date (dd/mm/yyyy) and get day name
+        const parts = item.Fecha.split('/');
+        const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        const dayName = dayNames[dateObj.getDay()];
+        const displayDate = `${item.Fecha}<br><small style="font-size:0.75rem;">${dayName}</small>`;
+        
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${item.Fecha}</td><td>${item.Escritos}</td><td>${item.Proyectos}</td><td>${item.Total}</td>`;
+        row.innerHTML = `<td style="font-size:1.1rem;">${displayDate}</td><td>${item.Escritos}</td><td>${item.Proyectos}</td><td>${item.Total}</td>`;
         tableBody.appendChild(row);
-        labels.push(item.Fecha);
+        
+        labels.push(`${item.Fecha}\n${dayName}`);
         data.push(item.Total);
     });
     renderDatesBarChart(labels, data);
@@ -303,30 +313,46 @@ function hideActions() {
     document.getElementById('proveyentesSection').style.opacity = '';
 }
 
-// Notification popout for produced files
+let popupCount = 0;
+
+// Notification popout for produced files - stackable and with filename
 function showDownloadPopup(filePath) {
+    const filename = filePath.split(/[\\\/]/).pop(); // Extract filename from path
+    const offsetY = popupCount * 100; // Stack vertically
+    popupCount++;
+    
     const container = document.createElement('div');
-    container.style = "position:fixed;right:20px;bottom:20px;z-index:20000;background:#0d6efd;color:white;padding:14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.2);";
+    container.style = `position:fixed;right:20px;bottom:${20 + offsetY}px;z-index:${20000 + popupCount};background:#0d6efd;color:white;padding:14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.2);min-width:280px;`;
     container.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-weight:600;">Archivo descargado</div>
-            <div style="margin-left:8px;">
-                <button id="openProdBtn" class="btn btn-sm btn-light">Abrir</button>
-                <button id="closeProdBtn" class="btn btn-sm btn-outline-light ms-2">Cerrar</button>
+            <div style="font-size:0.85rem;color:#e7f1ff;word-break:break-word;">${filename}</div>
+            <div style="display:flex;gap:6px;">
+                <button id="openProdBtn_${popupCount}" class="btn btn-sm btn-light">Abrir</button>
+                <button id="closeProdBtn_${popupCount}" class="btn btn-sm btn-outline-light">Cerrar</button>
             </div>
         </div>
     `;
     document.body.appendChild(container);
-    document.getElementById('openProdBtn').onclick = function() {
+    
+    document.getElementById(`openProdBtn_${popupCount}`).onclick = function() {
         if (window.pywebview) {
             window.pywebview.api.open_file(filePath);
         }
     };
-    document.getElementById('closeProdBtn').onclick = function() {
+    
+    document.getElementById(`closeProdBtn_${popupCount}`).onclick = function() {
         container.remove();
+        popupCount--;
     };
+    
     // Auto remove after 12s
-    setTimeout(() => container.remove(), 20000);
+    setTimeout(() => {
+        if (document.body.contains(container)) {
+            container.remove();
+            popupCount--;
+        }
+    }, 12000);
 }
 
 // Handle select file
