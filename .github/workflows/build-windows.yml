@@ -24,7 +24,9 @@ jobs:
 
       - name: Build EXE with PyInstaller
         run: |
-          pyinstaller main.spec
+          pyinstaller --noconfirm --onefile --windowed ^
+          --add-data "frontend;frontend" ^
+          main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
