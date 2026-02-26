@@ -24,8 +24,8 @@ jobs:
 
       - name: Build EXE with PyInstaller
         run: |
-          pyinstaller --noconfirm --onefile --windowed ^
-          --add-data "frontend;frontend" ^
+          pyinstaller --noconfirm --onefile --windowed `
+          --add-data "frontend;frontend" `
           main.py
 
       - name: Upload artifact
