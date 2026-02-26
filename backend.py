@@ -22,7 +22,7 @@ class Api:
         # Try robust parsing with dayfirst and fallback formats
         if 'Recibido' not in df.columns:
             return df
-        parsed = pd.to_datetime(df['Recibido'], dayfirst=True, errors='coerce', infer_datetime_format=True)
+        parsed = pd.to_datetime(df['Recibido'], dayfirst=True, errors='coerce')
         # Try some common explicit formats for any NaT
         if parsed.isna().any():
             def try_formats(val):
