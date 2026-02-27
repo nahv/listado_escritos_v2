@@ -227,7 +227,7 @@ function populatePresentacionesByDateTable(list) {
         const displayDate = `${item.Fecha}<br><small style="font-size:0.75rem;">${dayName}</small>`;
         
         const row = document.createElement('tr');
-        row.innerHTML = `<td style="font-size:1.1rem;">${displayDate}</td><td>${item.Escritos}</td><td>${item.Proyectos}</td><td>${item.Total}</td>`;
+        row.innerHTML = `<td style="font-size:1.1rem;">${displayDate}</td><td>${item.Escritos}</td><td>${item.Proyectos}</td><td><strong>${item.Total}</strong></td>`;
         tableBody.appendChild(row);
         
         labels.push(`${item.Fecha}\n${dayName}`);
