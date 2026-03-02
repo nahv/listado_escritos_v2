@@ -329,53 +329,16 @@ class Api:
                         print(f"Failed to parse as d/m/y: {e}")
                         return {"status": "error", "message": f"Formato de fecha inválido: {start_date_str}"}
             
-            # Get the original data with original dates
-            # Make sure Recibido is datetime
-            original_data = self.data.copy()
+            # IMPORTANT: Use the same listados that export_pdf uses, but continue from last_split_index
+            # This ensures we don't reprocess records that were already assigned
+            listados = self.create_listados(self.data)
             
-            # Ensure Recibido is datetime
-            if not pd.api.types.is_datetime64_any_dtype(original_data['Recibido']):
-                original_data['Recibido'] = pd.to_datetime(original_data['Recibido'], errors='coerce')
-            
-            # Sort by original date to ensure chronological order
-            original_data = original_data.sort_values('Recibido')
-            
-            # Create listados with original dates (not modified)
-            today_date = datetime.now()
-            original_listados = []
-            
-            for index, row in original_data.iterrows():
-                # Get the original Recibido date (should be datetime now)
-                original_date = row['Recibido']
-                if pd.notna(original_date):
-                    # Format the date as dd/mm/yy for display
-                    date_str = original_date.strftime('%d/%m/%y')
-                    # Calculate days difference from today to the original date
-                    days_diff = (today_date - original_date).days
-                    fifth_col = f"{days_diff} días al {today_date.strftime('%d/%m')}"
-                    
-                    original_listados.append((
-                        row['Título'],
-                        row['Expte'],
-                        date_str,  # Original date formatted as string
-                        row['Apellido'] if pd.notna(row['Apellido']) else '',
-                        fifth_col
-                    ))
-                else:
-                    # Handle null dates
-                    original_listados.append((
-                        row['Título'],
-                        row['Expte'],
-                        'Fecha no disponible',
-                        row['Apellido'] if pd.notna(row['Apellido']) else '',
-                        '0 días al ' + today_date.strftime('%d/%m')
-                    ))
-            
-            # Now get the remaining records starting from last_split_index
+            # Get the starting index from where we left off
             start_idx = getattr(self, 'last_split_index', 0)
-            print(f"Start index: {start_idx}, total original listados: {len(original_listados)}")
+            print(f"Start index: {start_idx}, total listados: {len(listados)}")
             
-            remaining = original_listados[start_idx:]
+            # Get remaining records
+            remaining = listados[start_idx:]
             print(f"Remaining records: {len(remaining)}")
             
             if not remaining:
@@ -428,8 +391,8 @@ class Api:
             styles = getSampleStyleSheet()
             
             for i, group in enumerate(processed_groups):
-                # Title with tag - indicating these are continuous (but with original dates)
-                elements.append(Paragraph(f"Listado {i+1} <small>(Fechas continuas</small>", 
+                # Title with tag - indicating these are continuous
+                elements.append(Paragraph(f"Listado {i+1} <small>(Fechas continuas)</small>", 
                                          styles['Heading2']))
                 
                 if not group:

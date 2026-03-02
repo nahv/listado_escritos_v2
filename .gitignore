@@ -1,3 +1,5 @@
+test_data
+
 # Python artifacts
 __pycache__/
 *.py[cod]
