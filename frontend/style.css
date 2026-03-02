@@ -52,3 +52,202 @@ pre {
 #splash {
     transition: opacity 0.8s ease;
 }
+
+/* Add these to your existing CSS styles */
+
+/* Enhanced Calendar Day Styles */
+.calendar-day {
+    background: white;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 12px 8px;
+    min-height: 130px;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-day.has-records {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.calendar-day.has-records:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
+}
+
+.calendar-day-stats {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    padding: 6px 4px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 8px;
+}
+
+.calendar-day-empty {
+    font-size: 0.7rem;
+    margin-top: 8px;
+    padding: 4px;
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* Highlight colors for first record and today */
+.calendar-day.highlight-first {
+    background: linear-gradient(135deg, #fff3e0, #ffe4bc);
+    border-color: #ffb74d;
+    border-width: 2px;
+}
+
+.calendar-day.highlight-first .calendar-day-number {
+    color: #ed6c02;
+    font-weight: 700;
+}
+
+.calendar-day.highlight-today {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-color: #1976d2;
+    border-width: 2px;
+}
+
+.calendar-day.highlight-today .calendar-day-number {
+    color: #0d47a1;
+    font-weight: 700;
+}
+
+/* Statistics badges within calendar */
+.calendar-day .text-primary {
+    color: #0d6efd !important;
+}
+
+.calendar-day .text-success {
+    color: #198754 !important;
+}
+
+.calendar-day .border-top {
+    border-top-color: #e9ecef !important;
+}
+
+/* Calendar navigation improvements */
+.calendar-month-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 10px;
+}
+
+.calendar-nav-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    padding: 8px 20px;
+    color: #475569;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calendar-nav-btn:hover {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13,110,253,0.2);
+}
+
+/* Legend badges enhancement */
+.badge {
+    padding: 8px 12px;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.badge.bg-warning-subtle {
+    background-color: #fff3e0;
+    color: #ed6c02;
+    border: 1px solid #ffb74d;
+}
+
+.badge.bg-info-subtle {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #1976d2;
+}
+
+/* Responsive calendar adjustments */
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 100px;
+        padding: 8px 4px;
+    }
+    
+    .calendar-day-stats {
+        font-size: 0.65rem;
+    }
+    
+    .calendar-month-title {
+        font-size: 1.2rem;
+        flex-wrap: wrap;
+    }
+    
+    .calendar-nav-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Animation for calendar days */
+@keyframes fadeInDay {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.calendar-day {
+    animation: fadeInDay 0.3s ease-out;
+    animation-fill-mode: both;
+}
+
+/* Stagger animation for days */
+.calendar-day:nth-child(n) {
+    animation-delay: calc(0.02s * var(--day-index, 1));
+}
+
+/* Add to your existing CSS - Modal z-index fixes */
+.modal {
+    z-index: 1055 !important;
+}
+
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
+/* Ensure calendar modal doesn't block other modals */
+#calendarModal {
+    z-index: 1055;
+}
+
+#dateRecordsModal,
+#titleRecordsModal {
+    z-index: 1060; /* Higher than calendar modal */
+}
+
+/* When calendar modal is open, ensure it doesn't trap events */
+.modal.show {
+    pointer-events: auto;
+}

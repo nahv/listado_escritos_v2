@@ -1,10 +1,12 @@
 // ============================================================================
-// app.js - Enhanced version with REAL DATA integration
+// app.js - Enhanced version 
 // ============================================================================
 
 let pieChart, barChart, datesBarChart;
 let currentSummary = null; // Store current data for modal access
 let rawData = null; // Store the full dataset for detailed queries
+let currentCalendarDate = new Date();
+let calendarDataCache = null; // Cache calendar data for better performance
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -33,10 +35,6 @@ function parseDateString(dateStr) {
 
 function parseSummary(info) {
     if (typeof info === 'object') {
-        // Store the full dataset for detailed queries
-        // The backend needs to provide the full data array
-        // For now, we'll simulate with presentaciones_by_date as the source
-        
         currentSummary = {
             total_records: info.total_records || 0,
             unique_exptes_count: info.unique_exptes_count || 0,
@@ -51,15 +49,13 @@ function parseSummary(info) {
             presentaciones_by_date: info.presentaciones_by_date || []
         };
         
-        // Initialize rawData structure for queries
-        // In a real implementation, the backend should provide the full dataset
-        // For now, we'll create a map for quick lookups
         initializeDataMaps(info);
+        buildCalendarCache(); // Build calendar cache when data loads
         
         return currentSummary;
     }
 
-    // Fallback parsing for string format (keeping for compatibility)
+    // Fallback parsing (keeping for compatibility)
     const lines = info.split('\n').map(l => l.trim()).filter(Boolean);
     let total_records = 0, unique_exptes_count = 0, escritos_count = 0, proyectos_count = 0;
     let oldest_escrito = '', days_difference = 0, today_date = '', transferencias_count = 0;
@@ -120,59 +116,65 @@ function parseSummary(info) {
 }
 
 // ============================================================================
-// NEW FUNCTION: Initialize data maps for quick lookups
+// Initialize data maps for quick lookups
 // ============================================================================
 
 function initializeDataMaps(info) {
-    // Create a map for quick access to records by date
-    // In a real implementation, this would come from the backend
-    // For now, we'll create a structure that can be populated when we have the data
-    
     rawData = {
         byDate: new Map(),
         byTitle: new Map(),
         allRecords: []
     };
     
-    // If we have presentaciones_by_date, we can use it as a starting point
     if (info.presentaciones_by_date) {
         info.presentaciones_by_date.forEach(dayData => {
             rawData.byDate.set(dayData.Fecha, {
                 escritos: dayData.Escritos,
                 proyectos: dayData.Proyectos,
                 total: dayData.Total,
-                records: [] // Will be populated when we have full data
+                records: []
             });
         });
     }
     
-    // If we have most_titles, initialize title map
     if (info.most_titles) {
         info.most_titles.forEach(titleData => {
             rawData.byTitle.set(titleData.Título, {
                 cantidad: titleData.Cantidad,
-                records: [] // Will be populated when we have full data
+                records: []
             });
         });
     }
 }
 
 // ============================================================================
-// NEW FUNCTION: Fetch records by date from backend
+// Build calendar cache for faster rendering
+// ============================================================================
+
+function buildCalendarCache() {
+    if (!currentSummary || !currentSummary.presentaciones_by_date) return;
+    
+    calendarDataCache = new Map();
+    currentSummary.presentaciones_by_date.forEach(item => {
+        calendarDataCache.set(item.Fecha, {
+            total: item.Total,
+            escritos: item.Escritos,
+            proyectos: item.Proyectos
+        });
+    });
+}
+
+// ============================================================================
+// Fetch records by date from backend
 // ============================================================================
 
 async function fetchRecordsByDate(dateStr) {
-    // In a real implementation, this would call a backend API
-    // For now, we'll simulate with the data we have
-    
     if (!window.pywebview) {
         console.warn('pywebview API not available');
         return [];
     }
     
     try {
-        // This would be a new API method you'd need to implement in backend.py
-        // For now, we'll simulate with a call to get filtered data
         const result = await window.pywebview.api.get_records_by_date(dateStr);
         if (result && result.status === 'ok') {
             return result.records;
@@ -185,7 +187,7 @@ async function fetchRecordsByDate(dateStr) {
 }
 
 // ============================================================================
-// NEW FUNCTION: Fetch records by title from backend
+// Fetch records by title from backend
 // ============================================================================
 
 async function fetchRecordsByTitle(title) {
@@ -195,7 +197,6 @@ async function fetchRecordsByTitle(title) {
     }
     
     try {
-        // This would be a new API method you'd need to implement in backend.py
         const result = await window.pywebview.api.get_records_by_title(title);
         if (result && result.status === 'ok') {
             return result.records;
@@ -212,7 +213,6 @@ async function fetchRecordsByTitle(title) {
 // ============================================================================
 
 function renderDashboard(summary) {
-    // Update period header
     document.getElementById('period-header').innerHTML = `
         <div class="d-flex align-items-center gap-3">
             <div class="bg-primary bg-opacity-10 p-3 rounded-3">
@@ -228,7 +228,6 @@ function renderDashboard(summary) {
         </div>
     `;
 
-    // Update summary text with statistics
     document.getElementById('summary-text').innerHTML = `
         <div class="row g-4">
             <div class="col-6 col-md-3">
@@ -428,110 +427,8 @@ function renderDatesBarChart(labels, data) {
 }
 
 // ============================================================================
-// MODAL FOR DATE RECORDS - With REAL DATA
+// ENHANCED CALENDAR OVERLAY - Beautiful and Detailed
 // ============================================================================
-
-async function showDateRecords(dateStr) {
-    const modal = new mdb.Modal(document.getElementById('dateRecordsModal'));
-    document.getElementById('selected-date-display').textContent = dateStr;
-
-    const tableBody = document.querySelector('#date-records-table tbody');
-    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando registros...</td></tr>';
-
-    try {
-        // In a real implementation, fetch from backend
-        let records = [];
-        
-        if (window.pywebview) {
-            // Call backend to get records for this date
-            const result = await window.pywebview.api.get_records_by_date(dateStr);
-            if (result && result.status === 'ok') {
-                records = result.records;
-            }
-        } else {
-            // Fallback simulation using the summary data
-            // In development, we'll use the presentaciones_by_date info
-            records = generateMockRecordsForDate(dateStr);
-        }
-
-        tableBody.innerHTML = '';
-        
-        if (records.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay registros para esta fecha</td></tr>';
-        } else {
-            records.forEach(record => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${record.expte || record.Expte || 'N/A'}</td>
-                    <td>${record.titulo || record.Título || 'N/A'}</td>
-                    <td><span class="badge ${(record.tipo || record.Tipo || '').toLowerCase().includes('escrito') ? 'bg-primary' : 'bg-success'}">${record.tipo || record.Tipo || 'N/A'}</span></td>
-                    <td>${record.presentante || record.Apellido || record.Presentante || 'N/A'}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-    } catch (error) {
-        console.error('Error loading date records:', error);
-        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar registros</td></tr>';
-    }
-
-    modal.show();
-}
-
-// ============================================================================
-// MODAL FOR TITLE RECORDS - With REAL DATA
-// ============================================================================
-
-async function showTitleRecords(title) {
-    const modal = new mdb.Modal(document.getElementById('titleRecordsModal'));
-    document.getElementById('selected-title-display').textContent = title;
-
-    const tableBody = document.querySelector('#title-records-table tbody');
-    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando registros...</td></tr>';
-
-    try {
-        let records = [];
-        
-        if (window.pywebview) {
-            // Call backend to get records with this title
-            const result = await window.pywebview.api.get_records_by_title(title);
-            if (result && result.status === 'ok') {
-                records = result.records;
-            }
-        } else {
-            // Fallback simulation
-            records = generateMockRecordsForTitle(title);
-        }
-
-        tableBody.innerHTML = '';
-        
-        if (records.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay registros con este título</td></tr>';
-        } else {
-            records.forEach(record => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${record.expte || record.Expte || 'N/A'}</td>
-                    <td>${record.fecha || record.Fecha || record.Recibido || 'N/A'}</td>
-                    <td><span class="badge ${(record.tipo || record.Tipo || '').toLowerCase().includes('escrito') ? 'bg-primary' : 'bg-success'}">${record.tipo || record.Tipo || 'N/A'}</span></td>
-                    <td>${record.presentante || record.Apellido || record.Presentante || 'N/A'}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-    } catch (error) {
-        console.error('Error loading title records:', error);
-        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar registros</td></tr>';
-    }
-
-    modal.show();
-}
-
-// ============================================================================
-// CALENDAR OVERLAY - With REAL DATA
-// ============================================================================
-
-let currentCalendarDate = new Date();
 
 function openCalendar() {
     const modal = new mdb.Modal(document.getElementById('calendarModal'));
@@ -559,9 +456,14 @@ function renderCalendar(date) {
 
     // Get record counts per date from actual data
     const recordCounts = {};
+    const escritosCounts = {};
+    const proyectosCounts = {};
+    
     if (currentSummary && currentSummary.presentaciones_by_date) {
         currentSummary.presentaciones_by_date.forEach(item => {
             recordCounts[item.Fecha] = item.Total;
+            escritosCounts[item.Fecha] = item.Escritos;
+            proyectosCounts[item.Fecha] = item.Proyectos;
         });
     }
 
@@ -574,13 +476,13 @@ function renderCalendar(date) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Build calendar HTML
+    // Build calendar HTML with enhanced styling
     let html = '<div class="calendar-grid">';
 
-    // Day headers
-    const dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    // Day headers with improved styling
+    const dayHeaders = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     dayHeaders.forEach(day => {
-        html += `<div class="calendar-day-header">${day}</div>`;
+        html += `<div class="calendar-day-header">${day.substring(0, 3)}</div>`;
     });
 
     // Empty cells for days before month start
@@ -588,13 +490,15 @@ function renderCalendar(date) {
         html += '<div class="calendar-day empty"></div>';
     }
 
-    // Fill in the days
+    // Fill in the days with enhanced information
     for (let day = 1; day <= totalDays; day++) {
         const currentDate = new Date(year, month, day);
         currentDate.setHours(0, 0, 0, 0);
         
         const dateStr = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
-        const count = recordCounts[dateStr] || 0;
+        const total = recordCounts[dateStr] || 0;
+        const escritos = escritosCounts[dateStr] || 0;
+        const proyectos = proyectosCounts[dateStr] || 0;
 
         let classes = 'calendar-day';
         if (oldestDate && currentDate.getTime() === oldestDate.getTime()) {
@@ -603,15 +507,39 @@ function renderCalendar(date) {
         if (currentDate.getTime() === today.getTime()) {
             classes += ' highlight-today';
         }
+        if (total > 0) {
+            classes += ' has-records';
+        }
 
         // Make day clickable if it has records
-        const clickHandler = count > 0 ? `onclick="showDateRecords('${dateStr}')"` : '';
+        const clickHandler = total > 0 ? `onclick="showDateRecords('${dateStr}')"` : '';
 
-        html += `<div class="${classes}" ${clickHandler} style="${count > 0 ? 'cursor: pointer;' : ''}">`;
+        html += `<div class="${classes}" ${clickHandler} style="${total > 0 ? 'cursor: pointer;' : ''}">`;
         html += `<div class="calendar-day-number">${day}</div>`;
-        if (count > 0) {
-            html += `<div class="record-count-badge">${count} ${count === 1 ? 'registro' : 'registros'}</div>`;
+        
+        if (total > 0) {
+            html += `
+                <div class="calendar-day-stats">
+                    <div class="d-flex flex-column gap-1 mt-1">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <span><i class="fas fa-file-alt text-primary" style="font-size: 0.7rem;"></i> Escritos:</span>
+                            <span class="fw-semibold text-primary">${escritos}</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <span><i class="fas fa-file text-success" style="font-size: 0.7rem;"></i> Proyectos:</span>
+                            <span class="fw-semibold text-success">${proyectos}</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between small border-top mt-1 pt-1">
+                            <span><i class="fas fa-calculator text-muted"></i> Total:</span>
+                            <span class="fw-bold" style="color: #e67e22;">${total}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `<div class="calendar-day-empty text-muted small mt-2">Sin escritos</div>`;
         }
+        
         html += '</div>';
     }
 
@@ -620,12 +548,128 @@ function renderCalendar(date) {
 }
 
 // ============================================================================
+// MODAL FOR DATE RECORDS - With REAL DATA
+// ============================================================================
+
+// ============================================================================
+// MODAL FOR DATE RECORDS - Fixed z-index issue
+// ============================================================================
+
+async function showDateRecords(dateStr) {
+    // First, hide the calendar modal
+    const calendarModal = mdb.Modal.getInstance(document.getElementById('calendarModal'));
+    if (calendarModal) {
+        calendarModal.hide();
+    }
+    
+    // Small delay to ensure calendar modal is hidden
+    setTimeout(async () => {
+        const modal = new mdb.Modal(document.getElementById('dateRecordsModal'));
+        document.getElementById('selected-date-display').textContent = dateStr;
+
+        const tableBody = document.querySelector('#date-records-table tbody');
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando registros...</td></tr>';
+
+        try {
+            let records = [];
+            
+            if (window.pywebview) {
+                const result = await window.pywebview.api.get_records_by_date(dateStr);
+                if (result && result.status === 'ok') {
+                    records = result.records;
+                }
+            } else {
+                records = generateMockRecordsForDate(dateStr);
+            }
+
+            tableBody.innerHTML = '';
+            
+            if (records.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay registros para esta fecha</td></tr>';
+            } else {
+                records.forEach(record => {
+                    const row = document.createElement('tr');
+                    const tipo = record.tipo || record.Tipo || 'N/A';
+                    const isEscrito = tipo.toLowerCase().includes('escrito');
+                    
+                    row.innerHTML = `
+                        <td>${record.expte || record.Expte || 'N/A'}</td>
+                        <td>${record.titulo || record.Título || 'N/A'}</td>
+                        <td><span class="badge ${isEscrito ? 'bg-primary' : 'bg-success'}">${tipo}</span></td>
+                        <td>${record.presentante || record.Apellido || record.Presentante || 'N/A'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading date records:', error);
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar registros</td></tr>';
+        }
+
+        modal.show();
+    }, 300); // Small delay to ensure smooth transition
+}
+
+// Also update the calendar day click handler in renderCalendar function
+// Find this line in renderCalendar:
+// const clickHandler = total > 0 ? `onclick="showDateRecords('${dateStr}')"` : '';
+
+// It should already be correct, but ensure the function is called properly
+// ============================================================================
+// MODAL FOR TITLE RECORDS - With REAL DATA
+// ============================================================================
+
+async function showTitleRecords(title) {
+    const modal = new mdb.Modal(document.getElementById('titleRecordsModal'));
+    document.getElementById('selected-title-display').textContent = title;
+
+    const tableBody = document.querySelector('#title-records-table tbody');
+    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando registros...</td></tr>';
+
+    try {
+        let records = [];
+        
+        if (window.pywebview) {
+            const result = await window.pywebview.api.get_records_by_title(title);
+            if (result && result.status === 'ok') {
+                records = result.records;
+            }
+        } else {
+            records = generateMockRecordsForTitle(title);
+        }
+
+        tableBody.innerHTML = '';
+        
+        if (records.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay registros con este título</td></tr>';
+        } else {
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                const tipo = record.tipo || record.Tipo || 'N/A';
+                const isEscrito = tipo.toLowerCase().includes('escrito');
+                
+                row.innerHTML = `
+                    <td>${record.expte || record.Expte || 'N/A'}</td>
+                    <td>${record.fecha || record.Fecha || record.Recibido || 'N/A'}</td>
+                    <td><span class="badge ${isEscrito ? 'bg-primary' : 'bg-success'}">${tipo}</span></td>
+                    <td>${record.presentante || record.Apellido || record.Presentante || 'N/A'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading title records:', error);
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar registros</td></tr>';
+    }
+
+    modal.show();
+}
+
+// ============================================================================
 // MOCK DATA GENERATORS (for development/fallback)
 // ============================================================================
 
 function generateMockRecordsForDate(dateStr) {
-    // This is only used when pywebview is not available
-    // In production, this data would come from the backend
     const tipos = ['Escrito', 'Proyecto'];
     const presentantes = ['Dr. Pérez', 'Dra. García', 'Dr. Rodríguez', 'Dra. Martínez', 'Dr. López'];
     const titulos = ['Demanda', 'Contestación', 'Proyecto de sentencia', 'Recurso', 'Traslado'];
@@ -647,7 +691,6 @@ function generateMockRecordsForDate(dateStr) {
 }
 
 function generateMockRecordsForTitle(title) {
-    // Mock data for development
     const tipos = ['Escrito', 'Proyecto'];
     const presentantes = ['Dr. Pérez', 'Dra. García', 'Dr. Rodríguez'];
     const fechas = ['15/01/2024', '16/01/2024', '17/01/2024', '18/01/2024'];
@@ -704,7 +747,6 @@ function showActions() {
     document.getElementById('clearButton').classList.remove('d-none');
     document.getElementById('proveyentesSection').classList.remove('d-none');
 
-    // Smooth fade in
     [document.getElementById('exportBtn'), document.getElementById('calendarBtn'),
      document.getElementById('clearButton'), document.getElementById('proveyentesSection')].forEach(el => {
         el.style.opacity = 0;
@@ -798,7 +840,6 @@ function showDownloadPopup(filePath) {
 // EVENT LISTENERS
 // ============================================================================
 
-// Select file button
 document.getElementById('selectFileBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.read_data('');
@@ -816,12 +857,10 @@ document.getElementById('selectFileBtn').onclick = async function() {
     }
 };
 
-// Calendar button
 document.getElementById('calendarBtn').onclick = function() {
     openCalendar();
 };
 
-// Previous month button
 document.addEventListener('click', function(e) {
     if (e.target.id === 'prevMonthBtn' || e.target.closest('#prevMonthBtn')) {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
@@ -833,7 +872,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Excel export
 document.getElementById('exportBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.export_excel();
@@ -847,7 +885,6 @@ document.getElementById('exportBtn').onclick = async function() {
     }
 };
 
-// Export PDF
 document.getElementById('exportPdfBtn').onclick = async function() {
     const nProveyentes = parseInt(document.getElementById('proveyentesInput').value);
     if (!nProveyentes || nProveyentes < 1) {
@@ -885,7 +922,6 @@ document.getElementById('exportPdfBtn').onclick = async function() {
     }
 };
 
-// Continuous export
 document.getElementById('doContinuousExportBtn').onclick = async function() {
     const startDate = document.getElementById('continuousStartDate').value;
     const nProveyentes = parseInt(document.getElementById('continuousNumListados').value) || 1;
@@ -910,7 +946,6 @@ document.getElementById('doContinuousExportBtn').onclick = async function() {
     }
 };
 
-// Clear button
 document.getElementById('clearButton').onclick = function() {
     document.getElementById('summary').style.display = 'none';
     document.getElementById('summary-text').innerHTML = '';
@@ -927,6 +962,7 @@ document.getElementById('clearButton').onclick = function() {
     
     currentSummary = null;
     rawData = null;
+    calendarDataCache = null;
     animateWindowResize(1200, 933, 400);
 };
 
