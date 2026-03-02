@@ -596,7 +596,7 @@
         <div id="splash-content">
             <i class="fas fa-file-alt" id="splash-icon" style="font-size: 80px;"></i>
             <h1 id="splash-title">Listado de Escritos</h1>
-            <p id="splash-subtitle">Dashboard profesional de gestión</p>
+            <p id="splash-subtitle">Dashboard de gestión</p>
             <div class="spinner-container">
                 <div class="spinner-dot"></div>
                 <div class="spinner-dot"></div>
@@ -630,6 +630,10 @@
             <button type="button" class="btn btn-secondary d-none" id="clearButton">
                 <i class="fas fa-trash-alt me-2"></i>Limpiar
             </button>
+            <!-- Add this button next to the other action buttons -->
+<button type="button" class="btn btn-primary d-none" id="exportStaticBtn" style="background: #6f42c1;" onclick="exportStaticDashboard()">
+    <i class="fas fa-file-code me-2"></i>Exportar Dashboard HTML
+</button>
         </div>
 
         <!-- Proveyentes Section -->

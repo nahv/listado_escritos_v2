@@ -105,17 +105,17 @@ class Api:
         presentaciones_count = len(self.data[self.data['Tipo'].str.contains('escrito', case=False, na=False)])
         proyectos_count = len(self.data[self.data['Tipo'].str.contains('proyecto', case=False, na=False)])
         oldest_record = self.data['Recibido'].min()
-        oldest_record_formatted = oldest_record.strftime("%d/%m/%Y") if not pd.isna(oldest_record) else ""
+        oldest_record_formatted = oldest_record.strftime("%d/%m/%Y") if pd.notna(oldest_record) else ""
         newest_record = self.data['Recibido'].max()
         unique_exptes_count = self.data['Expte'].nunique()
         transferencias_count = len(self.data[self.data['Título'].str.contains('transferencia', case=False, na=False)])
         today_date = datetime.now()
-        days_difference = (today_date - oldest_record).days if not pd.isna(oldest_record) else 0
+        days_difference = (today_date - oldest_record).days if pd.notna(oldest_record) else 0
         today_formatted = today_date.strftime("%d/%m/%Y")
         
         # Top titles
         most_titles_series = self.data['Título'].value_counts().head(10)
-        most_titles = [{"Título": k, "Cantidad": int(v)} for k, v in most_titles_series.items()]
+        most_titles = [{"Título": str(k), "Cantidad": int(v)} for k, v in most_titles_series.items()]
 
         # Presentaciones por Fecha (group by Recibido date)
         self.data['Recibido_date_str'] = self.data['Recibido'].dt.strftime('%d/%m/%Y')
@@ -125,25 +125,31 @@ class Api:
             escritos = int(grp['Tipo'].str.contains('escrito', case=False, na=False).sum())
             proyectos = int(grp['Tipo'].str.contains('proyecto', case=False, na=False).sum())
             total = len(grp)
-            presentaciones_by_date.append({"Fecha": date_str, "Escritos": escritos, "Proyectos": proyectos, "Total": int(total)})
+            presentaciones_by_date.append({
+                "Fecha": str(date_str), 
+                "Escritos": escritos, 
+                "Proyectos": proyectos, 
+                "Total": int(total)
+            })
 
         # Compose period
         period = f"{oldest_record_formatted} a {today_formatted}" if oldest_record_formatted else ""
 
-        # Return structured dict (pywebview will send JSON-able object)
+        # Return structured dict with raw records included
         return {
             "status": "ok",
             "total_records": int(total_records),
             "unique_exptes_count": int(unique_exptes_count),
             "presentaciones_count": int(presentaciones_count),
             "proyectos_count": int(proyectos_count),
-            "oldest_record": oldest_record_formatted,
+            "oldest_record": str(oldest_record_formatted),
             "days_difference": int(days_difference),
-            "today_date": today_formatted,
+            "today_date": str(today_formatted),
             "transferencias_count": int(transferencias_count),
             "most_titles": most_titles,
             "presentaciones_by_date": presentaciones_by_date,
-            "period": period
+            "period": str(period),
+            "raw_records": self.raw_records  # Include raw records for detailed views
         }
 
     def _store_raw_records(self):
@@ -152,18 +158,28 @@ class Api:
         """
         self.raw_records = []
         for _, row in self.data.iterrows():
+            # Convert Timestamp to string if present
+            recibido_val = row.get('Recibido')
+            if pd.notna(recibido_val):
+                if isinstance(recibido_val, pd.Timestamp):
+                    recibido_str = recibido_val.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    recibido_str = str(recibido_val)
+            else:
+                recibido_str = None
+                
             record = {
                 "expte": str(row.get('Expte', 'N/A')),
                 "titulo": str(row.get('Título', 'N/A')),
                 "tipo": str(row.get('Tipo', 'N/A')),
                 "presentante": str(row.get('Apellido', 'N/A')),
-                "fecha": str(row.get('Recibido_date_str', 'N/A')) if 'Recibido_date_str' in row else 'N/A',
-                "recibido": row.get('Recibido', None)
+                "fecha": str(row.get('Recibido_date_str', 'N/A')) if 'Recibido_date_str' in row and pd.notna(row.get('Recibido_date_str')) else 'N/A',
+                "recibido": recibido_str
             }
             self.raw_records.append(record)
 
     # ============================================================================
-    # NEW METHODS FOR DETAILED RECORD RETRIEVAL
+    # METHODS FOR DETAILED RECORD RETRIEVAL
     # ============================================================================
 
     def get_records_by_date(self, date_str):
@@ -732,6 +748,53 @@ class Api:
             import traceback
             traceback.print_exc()
             return {"status": "error", "message": f"Error al exportar PDF continuo: {e}"}
+
+    # ============================================================================
+    # NEW METHOD FOR STATIC HTML EXPORT
+    # ============================================================================
+    
+    def export_static_html(self, data):
+        """
+        Export the dashboard as a static HTML file
+        """
+        try:
+            file_types = ["Archivos HTML (*.html)"]
+            default_filename = f"dashboard_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
+            
+            save_path = webview.windows[0].create_file_dialog(
+                webview.SAVE_DIALOG, 
+                allow_multiple=False, 
+                file_types=file_types, 
+                save_filename=default_filename
+            )
+            
+            if isinstance(save_path, (tuple, list)):
+                save_path = save_path[0] if save_path else None
+                
+            if not save_path:
+                return {"status": "cancelled", "message": "Exportación cancelada por el usuario."}
+            
+            # Get the HTML content from the data
+            html_content = data.get('html_content', '')
+            
+            if not html_content:
+                return {"status": "error", "message": "No se pudo generar el contenido HTML"}
+            
+            # Write the HTML content to file with UTF-8 encoding
+            with open(save_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            return {
+                "status": "ok", 
+                "path": save_path,
+                "message": "Dashboard exportado correctamente"
+            }
+            
+        except Exception as e:
+            print(f"Error exporting static HTML: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"status": "error", "message": f"Error al exportar: {str(e)}"}
 
     def open_file(self, file_path):
         try:
