@@ -251,3 +251,241 @@ pre {
 .modal.show {
     pointer-events: auto;
 }
+
+/* Add these to your existing CSS styles */
+
+/* ===== ENHANCED TABLE READABILITY ===== */
+/* Add these to your existing CSS styles */
+
+/* ===== ENHANCED TABLE STYLES - Fully displayed ===== */
+.table-responsive {
+    overflow: visible !important; /* Remove scrollbars */
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border: 1px solid #eef2f6;
+    margin-bottom: 1rem;
+}
+
+.table {
+    margin-bottom: 0;
+    border: none;
+    box-shadow: none;
+    width: 100%;
+}
+
+.table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 1rem 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #334155;
+    border-bottom: 1px solid #eef2f6;
+    line-height: 1.5;
+}
+
+/* Increase table row height for better readability */
+.table tbody tr {
+    height: 70px;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* Better typography for table content */
+.table td {
+    font-size: 0.95rem;
+}
+
+.table td .fw-semibold {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.table td small {
+    font-size: 0.8rem;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Badge styles for counts */
+.badge.bg-primary-subtle {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+    font-weight: 500;
+    padding: 0.5rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.badge.bg-success-subtle {
+    background-color: #e8f5e9;
+    color: #198754;
+    font-weight: 500;
+    padding: 0.5rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.badge.bg-primary {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 30px;
+}
+
+/* View details button */
+.btn-view-details {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    background: #e9ecef;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-view-details:hover {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13,110,253,0.2);
+}
+
+.btn-view-details i {
+    font-size: 0.8rem;
+    margin-right: 0.25rem;
+}
+
+/* Ensure proper vertical alignment */
+.align-middle {
+    vertical-align: middle !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+/* Empty state styling */
+.table tbody tr td:only-child {
+    padding: 3rem;
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 1rem;
+}
+
+/* Chart containers */
+.chart-container {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border: 1px solid #eef2f6;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+    height: auto;
+    min-height: 350px;
+}
+
+.chart-container:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* Canvas sizing */
+canvas {
+    width: 100% !important;
+    height: 300px !important;
+    max-height: 300px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .col-lg-6 {
+        margin-bottom: 2rem;
+    }
+    
+    .table {
+        font-size: 0.9rem;
+    }
+    
+    .table tbody tr {
+        height: auto;
+        min-height: 65px;
+    }
+    
+    .btn-view-details {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Animation for table rows */
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.table tbody tr {
+    animation: fadeInRow 0.3s ease-out;
+    animation-fill-mode: both;
+}
+
+.table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+.table tbody tr:nth-child(6) { animation-delay: 0.3s; }
+.table tbody tr:nth-child(7) { animation-delay: 0.35s; }
+.table tbody tr:nth-child(8) { animation-delay: 0.4s; }
+.table tbody tr:nth-child(9) { animation-delay: 0.45s; }
+.table tbody tr:nth-child(10) { animation-delay: 0.5s; }
+
+/* Add these badge style variations */
+.badge.bg-primary-subtle {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+}
+
+.badge.bg-success-subtle {
+    background-color: #e8f5e9;
+    color: #198754;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+}
+
+/* Ensure proper vertical alignment in tables */
+.align-middle {
+    vertical-align: middle !important;
+}
+
+/* Empty state styling */
+.table tbody tr td:only-child {
+    padding: 3rem;
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+}

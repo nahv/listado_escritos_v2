@@ -357,6 +357,14 @@ function renderBarChart(labels, data) {
     });
 }
 
+// ============================================================================
+// Updated table population functions
+// ============================================================================
+
+// ============================================================================
+// Updated table population functions with chronological descending order
+// ============================================================================
+
 function populatePresentacionesByDateTable(list) {
     const tableBody = document.getElementById('presentaciones-by-date-table');
     tableBody.innerHTML = '';
@@ -364,7 +372,21 @@ function populatePresentacionesByDateTable(list) {
     const data = [];
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-    list.forEach(item => {
+    // Sort the list chronologically descending (most recent first)
+    const sortedList = [...list].sort((a, b) => {
+        // Parse dates in dd/mm/yyyy format
+        const [aDay, aMonth, aYear] = a.Fecha.split('/').map(Number);
+        const [bDay, bMonth, bYear] = b.Fecha.split('/').map(Number);
+        
+        // Create Date objects (Year, Month-1, Day) for comparison
+        const dateA = new Date(aYear, aMonth - 1, aDay);
+        const dateB = new Date(bYear, bMonth - 1, bDay);
+        
+        // Descending order (most recent first)
+        return dateB - dateA;
+    });
+
+    sortedList.forEach(item => {
         const parts = item.Fecha.split('/');
         const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
         const dayName = dayNames[dateObj.getDay()];
@@ -375,10 +397,16 @@ function populatePresentacionesByDateTable(list) {
                 <div class="fw-semibold">${item.Fecha}</div>
                 <small class="text-muted">${dayName}</small>
             </td>
-            <td class="text-center">${item.Escritos}</td>
-            <td class="text-center">${item.Proyectos}</td>
-            <td class="text-center"><span class="fw-bold">${item.Total}</span></td>
-            <td class="text-center">
+            <td class="text-center align-middle">
+                <span class="badge bg-primary-subtle text-primary">${item.Escritos}</span>
+            </td>
+            <td class="text-center align-middle">
+                <span class="badge bg-success-subtle text-success">${item.Proyectos}</span>
+            </td>
+            <td class="text-center align-middle">
+                <span class="fw-bold fs-6" style="color: #e67e22;">${item.Total}</span>
+            </td>
+            <td class="text-center align-middle">
                 <button class="btn-view-details" onclick="showDateRecords('${item.Fecha}')">
                     <i class="fas fa-eye me-1"></i>Ver
                 </button>
@@ -386,11 +414,39 @@ function populatePresentacionesByDateTable(list) {
         `;
         tableBody.appendChild(row);
 
+        // Use the sorted order for chart labels as well
         labels.push(`${item.Fecha}\n${dayName}`);
         data.push(item.Total);
     });
 
     renderDatesBarChart(labels, data);
+}
+
+function populateTopTitlesTable(mostTitles) {
+    const tableBody = document.getElementById('top-titles-table');
+    tableBody.innerHTML = '';
+    const labels = [];
+    const data = [];
+
+    mostTitles.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="fw-medium">${item.Título}</td>
+            <td class="text-center align-middle">
+                <span class="badge bg-primary rounded-pill px-3 py-2">${item.Cantidad}</span>
+            </td>
+            <td class="text-center align-middle">
+                <button class="btn-view-details" onclick="showTitleRecords('${item.Título.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-eye me-1"></i>Ver
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+        labels.push(item.Título);
+        data.push(item.Cantidad);
+    });
+
+    renderBarChart(labels, data);
 }
 
 function renderDatesBarChart(labels, data) {
