@@ -291,82 +291,165 @@ class Api:
         except Exception as e:
             return {"status": "error", "message": f"Error al exportar PDF: {e}"}
 
-    def export_pdf_continuous(self, start_date_str, n_listados, per_list=15):
+    def export_pdf_continuous(self, start_date_str, n_proveyentes, per_list=15):
         """
         Export continuous lists starting from start_date_str, taking records after last_split_index,
-        grouping per_list per listado, and assigning correlative dates starting at start_date.
+        assigning them sequentially to proveyentes (first 15 to listado 1, next 15 to listado 2, etc.),
+        preserving the original receipt dates from the records.
+        
+        The start_date_str is used for reference in the title but does NOT modify the record dates.
+        
+        Args:
+            start_date_str: Reference date for the title (doesn't modify record dates)
+            n_proveyentes: Number of proveyentes (lists to create)
+            per_list: Number of records per list BEFORE merging (default 15)
         """
+        print(f"export_pdf_continuous called with: start_date={start_date_str}, n_proveyentes={n_proveyentes}")
+        
         if self.data is None:
+            print("ERROR: No data loaded")
             return {"status": "error", "message": "No hay datos cargados para exportar."}
+        
         try:
-            # parse start date robustly (dayfirst)
+            # Parse start date for title reference only
             try:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-            except Exception:
+                print(f"Reference start date (Y-m-d): {start_date}")
+            except Exception as e:
+                print(f"Failed to parse as Y-m-d: {e}")
                 try:
                     start_date = datetime.strptime(start_date_str, "%d/%m/%Y")
-                except Exception:
-                    start_date = datetime.strptime(start_date_str, "%d/%m/%y")
-
-            # Prepare records from the remaining listados
-            listados = self.create_listados(self.data)
-            start_idx = getattr(self, 'last_split_index', 0)
-            remaining = listados[start_idx:]
-            # chunk into n_listados * per_list (or until exhausted)
-            total_needed = n_listados * per_list
-            selected = remaining[:total_needed]
-
-            # create groups sequentially of size per_list
-            groups = [selected[i:i+per_list] for i in range(0, len(selected), per_list)]
-            # assign correlative dates across all selected records
-            assigned_date = start_date
-            processed_groups = []
+                    print(f"Reference start date (d/m/Y): {start_date}")
+                except Exception as e:
+                    print(f"Failed to parse as d/m/Y: {e}")
+                    try:
+                        start_date = datetime.strptime(start_date_str, "%d/%m/%y")
+                        print(f"Reference start date (d/m/y): {start_date}")
+                    except Exception as e:
+                        print(f"Failed to parse as d/m/y: {e}")
+                        return {"status": "error", "message": f"Formato de fecha inválido: {start_date_str}"}
+            
+            # Get the original data with original dates
+            # Make sure Recibido is datetime
+            original_data = self.data.copy()
+            
+            # Ensure Recibido is datetime
+            if not pd.api.types.is_datetime64_any_dtype(original_data['Recibido']):
+                original_data['Recibido'] = pd.to_datetime(original_data['Recibido'], errors='coerce')
+            
+            # Sort by original date to ensure chronological order
+            original_data = original_data.sort_values('Recibido')
+            
+            # Create listados with original dates (not modified)
             today_date = datetime.now()
-            for grp in groups:
-                processed = []
-                for row in grp:
-                    # compute new 'Días' relative to today as requested
-                    days_diff = (today_date - assigned_date).days
-                    rec_str = assigned_date.strftime('%d/%m/%y')
+            original_listados = []
+            
+            for index, row in original_data.iterrows():
+                # Get the original Recibido date (should be datetime now)
+                original_date = row['Recibido']
+                if pd.notna(original_date):
+                    # Format the date as dd/mm/yy for display
+                    date_str = original_date.strftime('%d/%m/%y')
+                    # Calculate days difference from today to the original date
+                    days_diff = (today_date - original_date).days
                     fifth_col = f"{days_diff} días al {today_date.strftime('%d/%m')}"
-                    processed.append((row[0], row[1], rec_str, row[3] if row[3] else '', fifth_col))
-                    # increment date for next record
-                    assigned_date = assigned_date + timedelta(days=1)
-                processed_groups.append(processed)
-
-            # Save PDF
+                    
+                    original_listados.append((
+                        row['Título'],
+                        row['Expte'],
+                        date_str,  # Original date formatted as string
+                        row['Apellido'] if pd.notna(row['Apellido']) else '',
+                        fifth_col
+                    ))
+                else:
+                    # Handle null dates
+                    original_listados.append((
+                        row['Título'],
+                        row['Expte'],
+                        'Fecha no disponible',
+                        row['Apellido'] if pd.notna(row['Apellido']) else '',
+                        '0 días al ' + today_date.strftime('%d/%m')
+                    ))
+            
+            # Now get the remaining records starting from last_split_index
+            start_idx = getattr(self, 'last_split_index', 0)
+            print(f"Start index: {start_idx}, total original listados: {len(original_listados)}")
+            
+            remaining = original_listados[start_idx:]
+            print(f"Remaining records: {len(remaining)}")
+            
+            if not remaining:
+                return {"status": "error", "message": "No hay más registros para exportar."}
+            
+            # Calculate how many records we need (n_proveyentes * 15)
+            total_needed = n_proveyentes * per_list
+            print(f"Total needed: {total_needed}")
+            
+            selected_records = remaining[:total_needed]
+            print(f"Selected records: {len(selected_records)}")
+            
+            # Distribute records sequentially to each listado
+            # Group 1: records 0-14, Group 2: records 15-29, etc.
+            sequential_groups = []
+            for i in range(0, len(selected_records), per_list):
+                group = selected_records[i:i + per_list]
+                if group:  # Only add non-empty groups
+                    sequential_groups.append(group)
+            
+            print(f"Created {len(sequential_groups)} sequential groups before merging")
+            
+            # Merge expedientes WITHIN each group
+            processed_groups = []
+            for group_idx, group in enumerate(sequential_groups):
+                print(f"Processing group {group_idx+1} with {len(group)} records before merging")
+                merged_group = self.merge_expedientes(group)
+                print(f"  After merging: {len(merged_group)} records")
+                processed_groups.append(merged_group)
+            
+            # Save PDF dialog
             file_types = ["Archivos PDF (*.pdf)"]
             default_filename = f"proveyentes_continuo_{datetime.now().strftime('%d-%m-%Y_%H-%Mhs')}.pdf"
+            print(f"Opening save dialog with default: {default_filename}")
+            
             save_path = webview.windows[0].create_file_dialog(
                 webview.SAVE_DIALOG, allow_multiple=False, file_types=file_types, save_filename=default_filename
             )
             if isinstance(save_path, (tuple, list)):
                 save_path = save_path[0] if save_path else None
+            
+            print(f"Save path: {save_path}")
+            
             if not save_path:
                 return {"status": "cancelled", "message": "Exportación cancelada por el usuario."}
-
-            # Build PDF (Fechas continuas) using merge_expedientes per group
+            
+            # Build PDF
             doc = SimpleDocTemplate(save_path, pagesize=A4)
             elements = []
             styles = getSampleStyleSheet()
+            
             for i, group in enumerate(processed_groups):
-                elements.append(Paragraph(f"Listado {i+1} <small>(Fechas continuas)</small>", styles['Heading2']))
+                # Title with tag - indicating these are continuous (but with original dates)
+                elements.append(Paragraph(f"Listado {i+1} <small>(Fechas continuas</small>", 
+                                         styles['Heading2']))
+                
                 if not group:
                     elements.append(Paragraph("Sin registros asignados.", styles['Normal']))
                 else:
-                    # merge expedientes within this small group to keep presentaciones together
-                    merged = self.merge_expedientes(group)
                     data = [["Título", "Expediente", "Fecha", "Presentante", "Días corridos"]]
-                    processed_group = []
-                    for row in merged:
+                    processed_rows = []
+                    
+                    for row in group:
                         titulo = row[0]
                         if len(titulo) > 42:
                             titulo = titulo[:42] + "..."
                         presentante = row[3]
                         if presentante and len(presentante) > 15:
                             presentante = presentante[:15] + "..."
-                        processed_group.append([titulo, row[1], row[2], presentante, row[4]])
-                    data += processed_group
+                        processed_rows.append([titulo, row[1], row[2], presentante, row[4]])
+                    
+                    data += processed_rows
+                    
+                    # Same table formatting as repartidas version
                     page_width = A4[0]
                     col_widths = [
                         page_width * 0.32,
@@ -375,6 +458,7 @@ class Api:
                         page_width * 0.15,
                         page_width * 0.15
                     ]
+                    
                     table = Table(data, repeatRows=1, colWidths=col_widths)
                     table_style = [
                         ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
@@ -392,19 +476,55 @@ class Api:
                         ('VALIGN', (0,1), (-1,-1), 'TOP'),
                         ('WORDWRAP', (0,1), (0,-1), 'CJK'),
                     ]
+                    
+                    # Striped background
                     for row_idx in range(1, len(data)):
                         if row_idx % 2 == 1:
                             table_style.append(('BACKGROUND', (0,row_idx), (-1,row_idx), colors.whitesmoke))
+                    
                     table.setStyle(TableStyle(table_style))
                     elements.append(table)
+                
                 elements.append(Spacer(1, 18))
                 if (i + 1) % 2 == 0 and (i + 1) < len(processed_groups):
                     elements.append(PageBreak())
+            
+            print(f"Building PDF with {len(elements)} elements")
             doc.build(elements)
+            
             # Update last_split_index to reflect consumed records
-            self.last_split_index = start_idx + len(selected)
-            return {"status": "ok", "path": save_path}
+            self.last_split_index = start_idx + len(selected_records)
+            # Get the last date from the selected records for tracking
+            try:
+                dates = []
+                for r in selected_records:
+                    try:
+                        dates.append(datetime.strptime(r[2], "%d/%m/%y"))
+                    except:
+                        try:
+                            dates.append(datetime.strptime(r[2], "%d/%m/%Y"))
+                        except:
+                            pass
+                if dates:
+                    self.last_assigned_date = max(dates)
+                else:
+                    self.last_assigned_date = datetime.now()
+            except Exception:
+                self.last_assigned_date = datetime.now()
+            
+            print(f"Export successful. Last index: {self.last_split_index}")
+            
+            return {
+                "status": "ok", 
+                "path": save_path,
+                "last_assigned_date": self.last_assigned_date.strftime('%d/%m/%Y'),
+                "last_index": self.last_split_index
+            }
+            
         except Exception as e:
+            print(f"ERROR in export_pdf_continuous: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {"status": "error", "message": f"Error al exportar PDF continuo: {e}"}
 
     def open_file(self, file_path):
@@ -426,12 +546,4 @@ class Api:
     def set_window_size(self, width, height):
         win = webview.windows[0]
         win.resize(width, height)
-        return True
-        win = webview.windows[0]
-        screen = win.screen
-        if hasattr(screen, 'width') and hasattr(screen, 'height'):
-            x = max(0, int((screen.width - width) / 2))
-            y = max(0, int((screen.height - height) / 2))
-            win.move(x, y)
-        return True
         return True

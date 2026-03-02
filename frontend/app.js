@@ -429,13 +429,15 @@ document.getElementById('exportPdfBtn').onclick = async function() {
 // Hook modal export button
 document.getElementById('doContinuousExportBtn').onclick = async function() {
     const startDate = document.getElementById('continuousStartDate').value;
-    const nListados = parseInt(document.getElementById('continuousNumListados').value) || 1;
+    const nProveyentes = parseInt(document.getElementById('continuousNumListados').value) || 1;
+    
     if (!startDate) {
         alert('Ingrese una fecha de inicio válida.');
         return;
     }
+    
     if (window.pywebview) {
-        const result = await window.pywebview.api.export_pdf_continuous(startDate, nListados);
+        const result = await window.pywebview.api.export_pdf_continuous(startDate, nProveyentes);
         if (result && result.status === 'ok') {
             showDownloadPopup(result.path);
             // hide modal
@@ -449,7 +451,6 @@ document.getElementById('doContinuousExportBtn').onclick = async function() {
         alert('pywebview API no disponible');
     }
 };
-
 // Clear button
 document.getElementById('clearButton').onclick = function() {
     document.getElementById('summary').style.display = 'none';
