@@ -3,9 +3,11 @@ import os
 import subprocess
 import sys
 import pandas as pd
+import base64
+import tempfile
 from datetime import datetime, timedelta
 from openpyxl import Workbook
-from io import StringIO
+from io import StringIO, BytesIO
 import webview
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
@@ -59,55 +61,85 @@ class Api:
                 # fallback to simple read
                 df = pd.read_excel(file_path, engine='openpyxl')
 
-            df = self._parse_recibido_column(df)
-            self.data = df.copy()
-
-            # Basic aggregations
-            total_records = len(self.data)
-            presentaciones_count = len(self.data[self.data['Tipo'].str.contains('escrito', case=False, na=False)])
-            proyectos_count = len(self.data[self.data['Tipo'].str.contains('proyecto', case=False, na=False)])
-            oldest_record = self.data['Recibido'].min()
-            oldest_record_formatted = oldest_record.strftime("%d/%m/%Y") if not pd.isna(oldest_record) else ""
-            newest_record = self.data['Recibido'].max()
-            unique_exptes_count = self.data['Expte'].nunique()
-            transferencias_count = len(self.data[self.data['Título'].str.contains('transferencia', case=False, na=False)])
-            today_date = datetime.now()
-            days_difference = (today_date - oldest_record).days if not pd.isna(oldest_record) else 0
-            today_formatted = today_date.strftime("%d/%m/%Y")
-            # Top titles
-            most_titles_series = self.data['Título'].value_counts().head(10)
-            most_titles = [{"Título": k, "Cantidad": int(v)} for k, v in most_titles_series.items()]
-
-            # Presentaciones por Fecha (group by Recibido date)
-            self.data['Recibido_date_str'] = self.data['Recibido'].dt.strftime('%d/%m/%Y')
-            grouped = self.data.groupby('Recibido_date_str')
-            presentaciones_by_date = []
-            for date_str, grp in grouped:
-                escritos = int(grp['Tipo'].str.contains('escrito', case=False, na=False).sum())
-                proyectos = int(grp['Tipo'].str.contains('proyecto', case=False, na=False).sum())
-                total = len(grp)
-                presentaciones_by_date.append({"Fecha": date_str, "Escritos": escritos, "Proyectos": proyectos, "Total": int(total)})
-
-            # Compose period
-            period = f"{oldest_record_formatted} a {today_formatted}" if oldest_record_formatted else ""
-
-            # Return structured dict (pywebview will send JSON-able object)
-            return {
-                "status": "ok",
-                "total_records": int(total_records),
-                "unique_exptes_count": int(unique_exptes_count),
-                "presentaciones_count": int(presentaciones_count),
-                "proyectos_count": int(proyectos_count),
-                "oldest_record": oldest_record_formatted,
-                "days_difference": int(days_difference),
-                "today_date": today_formatted,
-                "transferencias_count": int(transferencias_count),
-                "most_titles": most_titles,
-                "presentaciones_by_date": presentaciones_by_date,
-                "period": period
-            }
+            return self._process_dataframe(df)
         else:
             return {"status": "no_file", "message": "No se ha seleccionado ningún archivo."}
+
+    def read_file_from_memory(self, filename, base64_content):
+        """
+        Read an Excel file from base64 content (for drag and drop)
+        """
+        try:
+            # Decode base64 content
+            file_content = base64.b64decode(base64_content)
+            
+            # Create a BytesIO object
+            file_bytes = BytesIO(file_content)
+            
+            # Read Excel from bytes
+            try:
+                df = pd.read_excel(file_bytes, skiprows=8, engine='openpyxl')
+            except Exception:
+                file_bytes.seek(0)  # Reset to beginning
+                df = pd.read_excel(file_bytes, engine='openpyxl')
+            
+            return self._process_dataframe(df)
+            
+        except Exception as e:
+            print(f"Error reading file from memory: {e}")
+            return {"status": "error", "message": f"Error al leer el archivo: {e}"}
+
+    def _process_dataframe(self, df):
+        """
+        Common DataFrame processing logic used by both read_data and read_file_from_memory
+        """
+        df = self._parse_recibido_column(df)
+        self.data = df.copy()
+
+        # Basic aggregations
+        total_records = len(self.data)
+        presentaciones_count = len(self.data[self.data['Tipo'].str.contains('escrito', case=False, na=False)])
+        proyectos_count = len(self.data[self.data['Tipo'].str.contains('proyecto', case=False, na=False)])
+        oldest_record = self.data['Recibido'].min()
+        oldest_record_formatted = oldest_record.strftime("%d/%m/%Y") if not pd.isna(oldest_record) else ""
+        newest_record = self.data['Recibido'].max()
+        unique_exptes_count = self.data['Expte'].nunique()
+        transferencias_count = len(self.data[self.data['Título'].str.contains('transferencia', case=False, na=False)])
+        today_date = datetime.now()
+        days_difference = (today_date - oldest_record).days if not pd.isna(oldest_record) else 0
+        today_formatted = today_date.strftime("%d/%m/%Y")
+        # Top titles
+        most_titles_series = self.data['Título'].value_counts().head(10)
+        most_titles = [{"Título": k, "Cantidad": int(v)} for k, v in most_titles_series.items()]
+
+        # Presentaciones por Fecha (group by Recibido date)
+        self.data['Recibido_date_str'] = self.data['Recibido'].dt.strftime('%d/%m/%Y')
+        grouped = self.data.groupby('Recibido_date_str')
+        presentaciones_by_date = []
+        for date_str, grp in grouped:
+            escritos = int(grp['Tipo'].str.contains('escrito', case=False, na=False).sum())
+            proyectos = int(grp['Tipo'].str.contains('proyecto', case=False, na=False).sum())
+            total = len(grp)
+            presentaciones_by_date.append({"Fecha": date_str, "Escritos": escritos, "Proyectos": proyectos, "Total": int(total)})
+
+        # Compose period
+        period = f"{oldest_record_formatted} a {today_formatted}" if oldest_record_formatted else ""
+
+        # Return structured dict (pywebview will send JSON-able object)
+        return {
+            "status": "ok",
+            "total_records": int(total_records),
+            "unique_exptes_count": int(unique_exptes_count),
+            "presentaciones_count": int(presentaciones_count),
+            "proyectos_count": int(proyectos_count),
+            "oldest_record": oldest_record_formatted,
+            "days_difference": int(days_difference),
+            "today_date": today_formatted,
+            "transferencias_count": int(transferencias_count),
+            "most_titles": most_titles,
+            "presentaciones_by_date": presentaciones_by_date,
+            "period": period
+        }
 
     def create_listados(self, data):
         today_date = datetime.now()
