@@ -19,6 +19,7 @@ class Api:
         self.data = None
         self.last_split_index = 0
         self.last_assigned_date = None
+        self.raw_records = []  # Store processed records for quick access
 
     def _parse_recibido_column(self, df):
         # Try robust parsing with dayfirst and fallback formats
@@ -96,6 +97,9 @@ class Api:
         df = self._parse_recibido_column(df)
         self.data = df.copy()
 
+        # Store raw records for quick access in detail views
+        self._store_raw_records()
+
         # Basic aggregations
         total_records = len(self.data)
         presentaciones_count = len(self.data[self.data['Tipo'].str.contains('escrito', case=False, na=False)])
@@ -108,6 +112,7 @@ class Api:
         today_date = datetime.now()
         days_difference = (today_date - oldest_record).days if not pd.isna(oldest_record) else 0
         today_formatted = today_date.strftime("%d/%m/%Y")
+        
         # Top titles
         most_titles_series = self.data['Título'].value_counts().head(10)
         most_titles = [{"Título": k, "Cantidad": int(v)} for k, v in most_titles_series.items()]
@@ -140,6 +145,212 @@ class Api:
             "presentaciones_by_date": presentaciones_by_date,
             "period": period
         }
+
+    def _store_raw_records(self):
+        """
+        Store raw records in a format ready for API responses
+        """
+        self.raw_records = []
+        for _, row in self.data.iterrows():
+            record = {
+                "expte": str(row.get('Expte', 'N/A')),
+                "titulo": str(row.get('Título', 'N/A')),
+                "tipo": str(row.get('Tipo', 'N/A')),
+                "presentante": str(row.get('Apellido', 'N/A')),
+                "fecha": str(row.get('Recibido_date_str', 'N/A')) if 'Recibido_date_str' in row else 'N/A',
+                "recibido": row.get('Recibido', None)
+            }
+            self.raw_records.append(record)
+
+    # ============================================================================
+    # NEW METHODS FOR DETAILED RECORD RETRIEVAL
+    # ============================================================================
+
+    def get_records_by_date(self, date_str):
+        """
+        Get all records for a specific date
+        """
+        if self.data is None:
+            return {"status": "error", "message": "No hay datos cargados", "records": []}
+        
+        try:
+            # Filter records for the given date
+            filtered = self.data[self.data['Recibido_date_str'] == date_str]
+            
+            records = []
+            for _, row in filtered.iterrows():
+                # Determine record type for badge styling
+                tipo = str(row.get('Tipo', 'N/A'))
+                is_escrito = 'escrito' in tipo.lower() if tipo != 'N/A' else False
+                
+                record = {
+                    "expte": str(row.get('Expte', 'N/A')),
+                    "titulo": str(row.get('Título', 'N/A')),
+                    "tipo": tipo,
+                    "tipo_class": "escrito" if is_escrito else "proyecto",
+                    "presentante": str(row.get('Apellido', 'N/A')),
+                    "fecha": str(row.get('Recibido_date_str', 'N/A'))
+                }
+                records.append(record)
+            
+            return {
+                "status": "ok",
+                "records": records,
+                "count": len(records)
+            }
+        except Exception as e:
+            print(f"Error getting records by date: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"status": "error", "message": str(e), "records": []}
+
+    def get_records_by_title(self, title):
+        """
+        Get all records with a specific title
+        """
+        if self.data is None:
+            return {"status": "error", "message": "No hay datos cargados", "records": []}
+        
+        try:
+            # Filter records with matching title (exact match for the title in most_titles)
+            # This handles the exact titles from the most_titles list
+            filtered = self.data[self.data['Título'] == title]
+            
+            records = []
+            for _, row in filtered.iterrows():
+                # Determine record type for badge styling
+                tipo = str(row.get('Tipo', 'N/A'))
+                is_escrito = 'escrito' in tipo.lower() if tipo != 'N/A' else False
+                
+                record = {
+                    "expte": str(row.get('Expte', 'N/A')),
+                    "titulo": str(row.get('Título', 'N/A')),
+                    "tipo": tipo,
+                    "tipo_class": "escrito" if is_escrito else "proyecto",
+                    "presentante": str(row.get('Apellido', 'N/A')),
+                    "fecha": str(row.get('Recibido_date_str', 'N/A'))
+                }
+                records.append(record)
+            
+            return {
+                "status": "ok",
+                "records": records,
+                "count": len(records)
+            }
+        except Exception as e:
+            print(f"Error getting records by title: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"status": "error", "message": str(e), "records": []}
+
+    def search_records(self, query, field=None):
+        """
+        Search records across multiple fields or a specific field
+        """
+        if self.data is None:
+            return {"status": "error", "message": "No hay datos cargados", "records": []}
+        
+        try:
+            if field and field in self.data.columns:
+                # Search in specific field
+                mask = self.data[field].astype(str).str.contains(query, case=False, na=False)
+            else:
+                # Search across multiple fields
+                mask = (
+                    self.data['Expte'].astype(str).str.contains(query, case=False, na=False) |
+                    self.data['Título'].astype(str).str.contains(query, case=False, na=False) |
+                    self.data['Apellido'].astype(str).str.contains(query, case=False, na=False) |
+                    self.data['Tipo'].astype(str).str.contains(query, case=False, na=False)
+                )
+            
+            filtered = self.data[mask]
+            
+            records = []
+            for _, row in filtered.iterrows():
+                tipo = str(row.get('Tipo', 'N/A'))
+                is_escrito = 'escrito' in tipo.lower() if tipo != 'N/A' else False
+                
+                record = {
+                    "expte": str(row.get('Expte', 'N/A')),
+                    "titulo": str(row.get('Título', 'N/A')),
+                    "tipo": tipo,
+                    "tipo_class": "escrito" if is_escrito else "proyecto",
+                    "presentante": str(row.get('Apellido', 'N/A')),
+                    "fecha": str(row.get('Recibido_date_str', 'N/A'))
+                }
+                records.append(record)
+            
+            return {
+                "status": "ok",
+                "records": records,
+                "count": len(records)
+            }
+        except Exception as e:
+            print(f"Error searching records: {e}")
+            return {"status": "error", "message": str(e), "records": []}
+
+    def get_all_records(self, limit=None, offset=0):
+        """
+        Get all records with pagination
+        """
+        if self.data is None:
+            return {"status": "error", "message": "No hay datos cargados", "records": []}
+        
+        try:
+            records = []
+            for idx, row in self.data.iterrows():
+                if offset > 0:
+                    offset -= 1
+                    continue
+                    
+                if limit and len(records) >= limit:
+                    break
+                    
+                tipo = str(row.get('Tipo', 'N/A'))
+                is_escrito = 'escrito' in tipo.lower() if tipo != 'N/A' else False
+                
+                record = {
+                    "expte": str(row.get('Expte', 'N/A')),
+                    "titulo": str(row.get('Título', 'N/A')),
+                    "tipo": tipo,
+                    "tipo_class": "escrito" if is_escrito else "proyecto",
+                    "presentante": str(row.get('Apellido', 'N/A')),
+                    "fecha": str(row.get('Recibido_date_str', 'N/A'))
+                }
+                records.append(record)
+            
+            return {
+                "status": "ok",
+                "records": records,
+                "total": len(self.data),
+                "count": len(records)
+            }
+        except Exception as e:
+            print(f"Error getting all records: {e}")
+            return {"status": "error", "message": str(e), "records": []}
+
+    def get_records_summary(self):
+        """
+        Get a summary of all records (useful for debugging)
+        """
+        if self.data is None:
+            return {"status": "error", "message": "No hay datos cargados"}
+        
+        try:
+            return {
+                "status": "ok",
+                "total_records": len(self.data),
+                "unique_dates": self.data['Recibido_date_str'].nunique() if 'Recibido_date_str' in self.data else 0,
+                "unique_titles": self.data['Título'].nunique(),
+                "unique_exptes": self.data['Expte'].nunique(),
+                "date_range": {
+                    "min": self.data['Recibido'].min().strftime('%d/%m/%Y') if not self.data['Recibido'].empty else None,
+                    "max": self.data['Recibido'].max().strftime('%d/%m/%Y') if not self.data['Recibido'].empty else None
+                }
+            }
+        except Exception as e:
+            print(f"Error getting records summary: {e}")
+            return {"status": "error", "message": str(e)}
 
     def create_listados(self, data):
         today_date = datetime.now()

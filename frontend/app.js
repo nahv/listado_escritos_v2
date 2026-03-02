@@ -1,4 +1,14 @@
-let pieChart, barChart;
+// ============================================================================
+// app.js - Enhanced version with REAL DATA integration
+// ============================================================================
+
+let pieChart, barChart, datesBarChart;
+let currentSummary = null; // Store current data for modal access
+let rawData = null; // Store the full dataset for detailed queries
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -8,10 +18,26 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
+function parseDateString(dateStr) {
+    // Parse dd/mm/yyyy
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+    }
+    return null;
+}
+
+// ============================================================================
+// DATA PARSING - Now stores raw data for detailed queries
+// ============================================================================
+
 function parseSummary(info) {
-    // If backend returns structured object
     if (typeof info === 'object') {
-        return {
+        // Store the full dataset for detailed queries
+        // The backend needs to provide the full data array
+        // For now, we'll simulate with presentaciones_by_date as the source
+        
+        currentSummary = {
             total_records: info.total_records || 0,
             unique_exptes_count: info.unique_exptes_count || 0,
             escritos_count: info.presentaciones_count || 0,
@@ -24,9 +50,16 @@ function parseSummary(info) {
             period: info.period || '',
             presentaciones_by_date: info.presentaciones_by_date || []
         };
+        
+        // Initialize rawData structure for queries
+        // In a real implementation, the backend should provide the full dataset
+        // For now, we'll create a map for quick lookups
+        initializeDataMaps(info);
+        
+        return currentSummary;
     }
 
-    // Fallback to previous string parsing (unchanged)
+    // Fallback parsing for string format (keeping for compatibility)
     const lines = info.split('\n').map(l => l.trim()).filter(Boolean);
     let total_records = 0, unique_exptes_count = 0, escritos_count = 0, proyectos_count = 0;
     let oldest_escrito = '', days_difference = 0, today_date = '', transferencias_count = 0;
@@ -63,108 +96,207 @@ function parseSummary(info) {
         }
     });
 
-    // Parse most_titles table
     const tableStart = info.indexOf('Escritos más repetidos:');
     if (tableStart !== -1) {
         const tableText = info.substring(tableStart).split('\n').slice(1);
         tableText.forEach((row, idx) => {
-            // Skip header row (first row) and any row with NaN
             if (idx === 0) return;
             const parts = row.trim().split(/\s{2,}/);
-            if (
-                parts.length === 2 &&
-                parts[0] &&
-                parts[1] &&
-                parts[0] !== 'Suma' &&
-                !isNaN(parseInt(parts[1]))
-            ) {
+            if (parts.length === 2 && parts[0] && parts[1] && parts[0] !== 'Suma' && !isNaN(parseInt(parts[1]))) {
                 most_titles.push({ Título: parts[0], Cantidad: parseInt(parts[1]) });
             }
         });
     }
 
-    // Compose period string
     const period = oldest_escrito && today_date ? `${oldest_escrito} a ${today_date}` : '';
 
-    return {
-        total_records,
-        unique_exptes_count,
-        escritos_count,
-        proyectos_count,
-        oldest_escrito,
-        days_difference,
-        today_date,
-        transferencias_count,
-        most_titles,
-        period
+    currentSummary = {
+        total_records, unique_exptes_count, escritos_count, proyectos_count,
+        oldest_escrito, days_difference, today_date, transferencias_count,
+        most_titles, period, presentaciones_by_date: []
     };
+
+    return currentSummary;
 }
 
-function renderDashboard(summary) {
-    // Update period header with icons
-    document.getElementById('period-header').innerHTML = `
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-calendar3 mb-2" viewBox="0 0 16 16">
-  <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2M1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857z"/>
-  <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
-</svg> ${summary.period} <br><br>
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-calendar2-event mb-2" viewBox="0 0 16 16">
-  <path d="M11 7.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
-  <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/>
-  <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5z"/>
-</svg>
-<strong>${summary.days_difference} días corridos</strong>
-<br> del primer escrito (${summary.oldest_escrito})
-<br> a hoy (${summary.today_date})
-`;
+// ============================================================================
+// NEW FUNCTION: Initialize data maps for quick lookups
+// ============================================================================
 
-    // Update summary text with icons and order
-    document.getElementById('summary-text').innerHTML = `
-        <br>
-        <strong>
-        ${summary.total_records} presentaciones 
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-journal-text mb-2" viewBox="0 0 16 16">
-        <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/>
-        <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v9a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2"/>
-        <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H2v-.5a.5.5 0 0 0-1 0"/>
-        </svg>
-        <br> en 
-        ${summary.unique_exptes_count} expedientes 
-        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="currentColor" class="bi bi-journals" viewBox="0 0 16 16">
-        <path d="M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1H1a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2"/>
-        <path d="M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 2.5v.5H.5a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1H2v-.5a.5.5 0 0 0-1 0"/>
-        </svg>
-        </strong>
-        <br>
-        <br>
-        ${summary.escritos_count} escritos <br>
-        ${summary.proyectos_count} proyectos
+function initializeDataMaps(info) {
+    // Create a map for quick access to records by date
+    // In a real implementation, this would come from the backend
+    // For now, we'll create a structure that can be populated when we have the data
+    
+    rawData = {
+        byDate: new Map(),
+        byTitle: new Map(),
+        allRecords: []
+    };
+    
+    // If we have presentaciones_by_date, we can use it as a starting point
+    if (info.presentaciones_by_date) {
+        info.presentaciones_by_date.forEach(dayData => {
+            rawData.byDate.set(dayData.Fecha, {
+                escritos: dayData.Escritos,
+                proyectos: dayData.Proyectos,
+                total: dayData.Total,
+                records: [] // Will be populated when we have full data
+            });
+        });
+    }
+    
+    // If we have most_titles, initialize title map
+    if (info.most_titles) {
+        info.most_titles.forEach(titleData => {
+            rawData.byTitle.set(titleData.Título, {
+                cantidad: titleData.Cantidad,
+                records: [] // Will be populated when we have full data
+            });
+        });
+    }
+}
+
+// ============================================================================
+// NEW FUNCTION: Fetch records by date from backend
+// ============================================================================
+
+async function fetchRecordsByDate(dateStr) {
+    // In a real implementation, this would call a backend API
+    // For now, we'll simulate with the data we have
+    
+    if (!window.pywebview) {
+        console.warn('pywebview API not available');
+        return [];
+    }
+    
+    try {
+        // This would be a new API method you'd need to implement in backend.py
+        // For now, we'll simulate with a call to get filtered data
+        const result = await window.pywebview.api.get_records_by_date(dateStr);
+        if (result && result.status === 'ok') {
+            return result.records;
+        }
+    } catch (error) {
+        console.error('Error fetching records by date:', error);
+    }
+    
+    return [];
+}
+
+// ============================================================================
+// NEW FUNCTION: Fetch records by title from backend
+// ============================================================================
+
+async function fetchRecordsByTitle(title) {
+    if (!window.pywebview) {
+        console.warn('pywebview API not available');
+        return [];
+    }
+    
+    try {
+        // This would be a new API method you'd need to implement in backend.py
+        const result = await window.pywebview.api.get_records_by_title(title);
+        if (result && result.status === 'ok') {
+            return result.records;
+        }
+    } catch (error) {
+        console.error('Error fetching records by title:', error);
+    }
+    
+    return [];
+}
+
+// ============================================================================
+// RENDER DASHBOARD
+// ============================================================================
+
+function renderDashboard(summary) {
+    // Update period header
+    document.getElementById('period-header').innerHTML = `
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary bg-opacity-10 p-3 rounded-3">
+                <i class="fas fa-calendar-alt fa-2x text-primary"></i>
+            </div>
+            <div>
+                <div class="text-muted small">Período analizado</div>
+                <div class="fw-bold fs-5">${summary.period}</div>
+                <div class="text-muted small mt-1">
+                    <i class="fas fa-clock me-1"></i>${summary.days_difference} días corridos
+                </div>
+            </div>
+        </div>
     `;
 
-    // Render pie chart
+    // Update summary text with statistics
+    document.getElementById('summary-text').innerHTML = `
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-number">${summary.total_records}</div>
+                    <div class="stat-label">Presentaciones</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-number">${summary.unique_exptes_count}</div>
+                    <div class="stat-label">Expedientes</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-number">${summary.escritos_count}</div>
+                    <div class="stat-label">Escritos</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-number">${summary.proyectos_count}</div>
+                    <div class="stat-label">Proyectos</div>
+                </div>
+            </div>
+        </div>
+    `;
+
     renderPieChart(summary);
 
-    // Populate presentaciones by date table & chart
     if (summary.presentaciones_by_date) {
         populatePresentacionesByDateTable(summary.presentaciones_by_date);
     }
 
-    // Populate top titles table and render bar chart
     populateTopTitlesTable(summary.most_titles);
 }
+
+// ============================================================================
+// CHARTS
+// ============================================================================
 
 function renderPieChart(summary) {
     const ctx = document.getElementById('pieChart').getContext('2d');
     if (pieChart) pieChart.destroy();
+
     pieChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: ['Proyectos', 'Escritos'],
             datasets: [{
                 data: [summary.proyectos_count, summary.escritos_count],
-                backgroundColor: ['#90CAF9', '#1360a4']
+                backgroundColor: ['#2c3e50', '#e67e22'],
+                borderWidth: 0
             }]
         },
-        options: { maintainAspectRatio: false }
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { size: 12, weight: '500' },
+                        padding: 20
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -176,9 +308,16 @@ function populateTopTitlesTable(mostTitles) {
 
     mostTitles.forEach(item => {
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${item.Título}</td><td>${item.Cantidad}</td>`;
+        row.innerHTML = `
+            <td class="fw-medium">${item.Título}</td>
+            <td class="text-center"><span class="badge bg-primary rounded-pill">${item.Cantidad}</span></td>
+            <td class="text-center">
+                <button class="btn-view-details" onclick="showTitleRecords('${item.Título.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-eye me-1"></i>Ver
+                </button>
+            </td>
+        `;
         tableBody.appendChild(row);
-
         labels.push(item.Título);
         data.push(item.Cantidad);
     });
@@ -189,57 +328,76 @@ function populateTopTitlesTable(mostTitles) {
 function renderBarChart(labels, data) {
     const ctx = document.getElementById('topTitlesBarChart').getContext('2d');
     if (barChart) barChart.destroy();
+
     barChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: ' ',
+                label: 'Cantidad',
                 data: data,
-                backgroundColor: labels.map(() => `#${Math.floor(Math.random() * 16777215).toString(16)}`)
+                backgroundColor: '#e67e22',
+                borderRadius: 6
             }]
         },
         options: {
             maintainAspectRatio: false,
-            // Remove indexAxis for vertical bars (default)
+            plugins: {
+                legend: { display: false }
+            },
             scales: {
-                x: { title: { display: true, text: 'Suma' } },
-                y: { title: { display: true, text: 'Cantidad' }, beginAtZero: true }
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#eef2f6' }
+                },
+                x: {
+                    grid: { display: false }
+                }
             }
         }
     });
 }
 
-// New: populate presentaciones-by-date table and bar chart
 function populatePresentacionesByDateTable(list) {
     const tableBody = document.getElementById('presentaciones-by-date-table');
     tableBody.innerHTML = '';
     const labels = [];
     const data = [];
-    
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    
+
     list.forEach(item => {
-        // Parse date (dd/mm/yyyy) and get day name
         const parts = item.Fecha.split('/');
-        const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
         const dayName = dayNames[dateObj.getDay()];
-        const displayDate = `${item.Fecha}<br><small style="font-size:0.75rem;">${dayName}</small>`;
-        
+
         const row = document.createElement('tr');
-        row.innerHTML = `<td style="font-size:1.1rem;">${displayDate}</td><td>${item.Escritos}</td><td>${item.Proyectos}</td><td><strong>${item.Total}</strong></td>`;
+        row.innerHTML = `
+            <td>
+                <div class="fw-semibold">${item.Fecha}</div>
+                <small class="text-muted">${dayName}</small>
+            </td>
+            <td class="text-center">${item.Escritos}</td>
+            <td class="text-center">${item.Proyectos}</td>
+            <td class="text-center"><span class="fw-bold">${item.Total}</span></td>
+            <td class="text-center">
+                <button class="btn-view-details" onclick="showDateRecords('${item.Fecha}')">
+                    <i class="fas fa-eye me-1"></i>Ver
+                </button>
+            </td>
+        `;
         tableBody.appendChild(row);
-        
+
         labels.push(`${item.Fecha}\n${dayName}`);
         data.push(item.Total);
     });
+
     renderDatesBarChart(labels, data);
 }
 
-let datesBarChart;
 function renderDatesBarChart(labels, data) {
     const ctx = document.getElementById('datesBarChart').getContext('2d');
     if (datesBarChart) datesBarChart.destroy();
+
     datesBarChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -247,21 +405,275 @@ function renderDatesBarChart(labels, data) {
             datasets: [{
                 label: 'Total Presentaciones',
                 data: data,
-                backgroundColor: labels.map(() => `#${Math.floor(Math.random() * 16777215).toString(16)}`)
+                backgroundColor: '#3498db',
+                borderRadius: 6
             }]
         },
         options: {
             maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
             scales: {
-                x: { title: { display: true, text: 'Fecha' } },
-                y: { title: { display: true, text: 'Total Presentaciones' }, beginAtZero: true }
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#eef2f6' }
+                },
+                x: {
+                    grid: { display: false }
+                }
             }
         }
     });
 }
 
+// ============================================================================
+// MODAL FOR DATE RECORDS - With REAL DATA
+// ============================================================================
+
+async function showDateRecords(dateStr) {
+    const modal = new mdb.Modal(document.getElementById('dateRecordsModal'));
+    document.getElementById('selected-date-display').textContent = dateStr;
+
+    const tableBody = document.querySelector('#date-records-table tbody');
+    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando registros...</td></tr>';
+
+    try {
+        // In a real implementation, fetch from backend
+        let records = [];
+        
+        if (window.pywebview) {
+            // Call backend to get records for this date
+            const result = await window.pywebview.api.get_records_by_date(dateStr);
+            if (result && result.status === 'ok') {
+                records = result.records;
+            }
+        } else {
+            // Fallback simulation using the summary data
+            // In development, we'll use the presentaciones_by_date info
+            records = generateMockRecordsForDate(dateStr);
+        }
+
+        tableBody.innerHTML = '';
+        
+        if (records.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay registros para esta fecha</td></tr>';
+        } else {
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.expte || record.Expte || 'N/A'}</td>
+                    <td>${record.titulo || record.Título || 'N/A'}</td>
+                    <td><span class="badge ${(record.tipo || record.Tipo || '').toLowerCase().includes('escrito') ? 'bg-primary' : 'bg-success'}">${record.tipo || record.Tipo || 'N/A'}</span></td>
+                    <td>${record.presentante || record.Apellido || record.Presentante || 'N/A'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading date records:', error);
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar registros</td></tr>';
+    }
+
+    modal.show();
+}
+
+// ============================================================================
+// MODAL FOR TITLE RECORDS - With REAL DATA
+// ============================================================================
+
+async function showTitleRecords(title) {
+    const modal = new mdb.Modal(document.getElementById('titleRecordsModal'));
+    document.getElementById('selected-title-display').textContent = title;
+
+    const tableBody = document.querySelector('#title-records-table tbody');
+    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando registros...</td></tr>';
+
+    try {
+        let records = [];
+        
+        if (window.pywebview) {
+            // Call backend to get records with this title
+            const result = await window.pywebview.api.get_records_by_title(title);
+            if (result && result.status === 'ok') {
+                records = result.records;
+            }
+        } else {
+            // Fallback simulation
+            records = generateMockRecordsForTitle(title);
+        }
+
+        tableBody.innerHTML = '';
+        
+        if (records.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No hay registros con este título</td></tr>';
+        } else {
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.expte || record.Expte || 'N/A'}</td>
+                    <td>${record.fecha || record.Fecha || record.Recibido || 'N/A'}</td>
+                    <td><span class="badge ${(record.tipo || record.Tipo || '').toLowerCase().includes('escrito') ? 'bg-primary' : 'bg-success'}">${record.tipo || record.Tipo || 'N/A'}</span></td>
+                    <td>${record.presentante || record.Apellido || record.Presentante || 'N/A'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading title records:', error);
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar registros</td></tr>';
+    }
+
+    modal.show();
+}
+
+// ============================================================================
+// CALENDAR OVERLAY - With REAL DATA
+// ============================================================================
+
+let currentCalendarDate = new Date();
+
+function openCalendar() {
+    const modal = new mdb.Modal(document.getElementById('calendarModal'));
+    renderCalendar(currentCalendarDate);
+    modal.show();
+}
+
+function renderCalendar(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    // Update month display
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    document.getElementById('currentMonthDisplay').textContent = `${monthNames[month]} ${year}`;
+
+    // Get first day of month and total days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startingDay = firstDay.getDay(); // 0 = Sunday
+    const totalDays = lastDay.getDate();
+
+    // Adjust for Monday as first day of week (Spanish locale)
+    const adjustedStartDay = startingDay === 0 ? 6 : startingDay - 1;
+
+    // Get record counts per date from actual data
+    const recordCounts = {};
+    if (currentSummary && currentSummary.presentaciones_by_date) {
+        currentSummary.presentaciones_by_date.forEach(item => {
+            recordCounts[item.Fecha] = item.Total;
+        });
+    }
+
+    // Parse oldest record date for highlighting
+    let oldestDate = null;
+    if (currentSummary && currentSummary.oldest_escrito) {
+        oldestDate = parseDateString(currentSummary.oldest_escrito);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build calendar HTML
+    let html = '<div class="calendar-grid">';
+
+    // Day headers
+    const dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    dayHeaders.forEach(day => {
+        html += `<div class="calendar-day-header">${day}</div>`;
+    });
+
+    // Empty cells for days before month start
+    for (let i = 0; i < adjustedStartDay; i++) {
+        html += '<div class="calendar-day empty"></div>';
+    }
+
+    // Fill in the days
+    for (let day = 1; day <= totalDays; day++) {
+        const currentDate = new Date(year, month, day);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        const dateStr = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+        const count = recordCounts[dateStr] || 0;
+
+        let classes = 'calendar-day';
+        if (oldestDate && currentDate.getTime() === oldestDate.getTime()) {
+            classes += ' highlight-first';
+        }
+        if (currentDate.getTime() === today.getTime()) {
+            classes += ' highlight-today';
+        }
+
+        // Make day clickable if it has records
+        const clickHandler = count > 0 ? `onclick="showDateRecords('${dateStr}')"` : '';
+
+        html += `<div class="${classes}" ${clickHandler} style="${count > 0 ? 'cursor: pointer;' : ''}">`;
+        html += `<div class="calendar-day-number">${day}</div>`;
+        if (count > 0) {
+            html += `<div class="record-count-badge">${count} ${count === 1 ? 'registro' : 'registros'}</div>`;
+        }
+        html += '</div>';
+    }
+
+    html += '</div>';
+    document.getElementById('calendar-container').innerHTML = html;
+}
+
+// ============================================================================
+// MOCK DATA GENERATORS (for development/fallback)
+// ============================================================================
+
+function generateMockRecordsForDate(dateStr) {
+    // This is only used when pywebview is not available
+    // In production, this data would come from the backend
+    const tipos = ['Escrito', 'Proyecto'];
+    const presentantes = ['Dr. Pérez', 'Dra. García', 'Dr. Rodríguez', 'Dra. Martínez', 'Dr. López'];
+    const titulos = ['Demanda', 'Contestación', 'Proyecto de sentencia', 'Recurso', 'Traslado'];
+    
+    const count = Math.floor(Math.random() * 5) + 1;
+    const records = [];
+    
+    for (let i = 0; i < count; i++) {
+        const tipo = tipos[Math.floor(Math.random() * tipos.length)];
+        records.push({
+            expte: `${Math.floor(Math.random() * 90000) + 10000}`,
+            titulo: titulos[Math.floor(Math.random() * titulos.length)],
+            tipo: tipo,
+            presentante: presentantes[Math.floor(Math.random() * presentantes.length)]
+        });
+    }
+    
+    return records;
+}
+
+function generateMockRecordsForTitle(title) {
+    // Mock data for development
+    const tipos = ['Escrito', 'Proyecto'];
+    const presentantes = ['Dr. Pérez', 'Dra. García', 'Dr. Rodríguez'];
+    const fechas = ['15/01/2024', '16/01/2024', '17/01/2024', '18/01/2024'];
+    
+    const count = Math.floor(Math.random() * 3) + 1;
+    const records = [];
+    
+    for (let i = 0; i < count; i++) {
+        records.push({
+            expte: `${Math.floor(Math.random() * 90000) + 10000}`,
+            fecha: fechas[Math.floor(Math.random() * fechas.length)],
+            tipo: 'Escrito',
+            presentante: presentantes[Math.floor(Math.random() * presentantes.length)]
+        });
+    }
+    
+    return records;
+}
+
+// ============================================================================
+// WINDOW MANAGEMENT
+// ============================================================================
+
 function animateWindowResize(targetWidth, targetHeight, duration = 400) {
     if (!window.pywebview) return;
+
     window.pywebview.api.get_window_size().then(size => {
         let startWidth = size.width;
         let startHeight = size.height;
@@ -272,10 +684,10 @@ function animateWindowResize(targetWidth, targetHeight, duration = 400) {
             let progress = Math.min((timestamp - startTime) / duration, 1);
             let newWidth = Math.round(startWidth + (targetWidth - startWidth) * progress);
             let newHeight = Math.round(startHeight + (targetHeight - startHeight) * progress);
+
             window.pywebview.api.set_window_size(newWidth, newHeight);
-            // Center window after resizing
+
             if (progress === 1) {
-                // Get screen size and center
                 window.pywebview.api.center_window(newWidth, newHeight);
             }
             if (progress < 1) {
@@ -288,65 +700,92 @@ function animateWindowResize(targetWidth, targetHeight, duration = 400) {
 
 function showActions() {
     document.getElementById('exportBtn').classList.remove('d-none');
+    document.getElementById('calendarBtn').classList.remove('d-none');
     document.getElementById('clearButton').classList.remove('d-none');
     document.getElementById('proveyentesSection').classList.remove('d-none');
-    // Optionally animate
-    document.getElementById('exportBtn').style.opacity = 0;
-    document.getElementById('clearButton').style.opacity = 0;
-    document.getElementById('proveyentesSection').style.opacity = 0;
-    setTimeout(() => {
-        document.getElementById('exportBtn').style.transition = "opacity 0.5s";
-        document.getElementById('clearButton').style.transition = "opacity 0.5s";
-        document.getElementById('proveyentesSection').style.transition = "opacity 0.5s";
-        document.getElementById('exportBtn').style.opacity = 1;
-        document.getElementById('clearButton').style.opacity = 1;
-        document.getElementById('proveyentesSection').style.opacity = 1;
-    }, 50);
+
+    // Smooth fade in
+    [document.getElementById('exportBtn'), document.getElementById('calendarBtn'),
+     document.getElementById('clearButton'), document.getElementById('proveyentesSection')].forEach(el => {
+        el.style.opacity = 0;
+        setTimeout(() => {
+            el.style.transition = "opacity 0.5s";
+            el.style.opacity = 1;
+        }, 50);
+    });
 }
 
 function hideActions() {
     document.getElementById('exportBtn').classList.add('d-none');
+    document.getElementById('calendarBtn').classList.add('d-none');
     document.getElementById('clearButton').classList.add('d-none');
     document.getElementById('proveyentesSection').classList.add('d-none');
-    document.getElementById('exportBtn').style.opacity = '';
-    document.getElementById('clearButton').style.opacity = '';
-    document.getElementById('proveyentesSection').style.opacity = '';
+
+    [document.getElementById('exportBtn'), document.getElementById('calendarBtn'),
+     document.getElementById('clearButton'), document.getElementById('proveyentesSection')].forEach(el => {
+        el.style.opacity = '';
+    });
 }
+
+// ============================================================================
+// NOTIFICATION POPUP
+// ============================================================================
 
 let popupCount = 0;
 
-// Notification popout for produced files - stackable and with filename
 function showDownloadPopup(filePath) {
-    const filename = filePath.split(/[\\\/]/).pop(); // Extract filename from path
-    const offsetY = popupCount * 100; // Stack vertically
+    const filename = filePath.split(/[\\\/]/).pop();
+    const offsetY = popupCount * 100;
     popupCount++;
-    
+
     const container = document.createElement('div');
-    container.style = `position:fixed;right:20px;bottom:${20 + offsetY}px;z-index:${20000 + popupCount};background:#0d6efd;color:white;padding:14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.2);min-width:280px;`;
+    container.style = `
+        position: fixed;
+        right: 20px;
+        bottom: ${20 + offsetY}px;
+        z-index: ${20000 + popupCount};
+        background: white;
+        color: #1e293b;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        min-width: 300px;
+        border-left: 4px solid #0d6efd;
+    `;
+
     container.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="font-weight:600;">Archivo descargado</div>
-            <div style="font-size:0.85rem;color:#e7f1ff;word-break:break-word;">${filename}</div>
-            <div style="display:flex;gap:6px;">
-                <button id="openProdBtn_${popupCount}" class="btn btn-sm btn-light">Abrir</button>
-                <button id="closeProdBtn_${popupCount}" class="btn btn-sm btn-outline-light">Cerrar</button>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-check-circle text-success"></i>
+                <span style="font-weight:600;">Archivo descargado</span>
+            </div>
+            <div style="font-size:0.85rem;color:#64748b;word-break:break-word;">
+                <i class="fas fa-file me-2"></i>${filename}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+                <button id="openProdBtn_${popupCount}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-folder-open me-1"></i>Abrir
+                </button>
+                <button id="closeProdBtn_${popupCount}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
             </div>
         </div>
     `;
+
     document.body.appendChild(container);
-    
+
     document.getElementById(`openProdBtn_${popupCount}`).onclick = function() {
         if (window.pywebview) {
             window.pywebview.api.open_file(filePath);
         }
     };
-    
+
     document.getElementById(`closeProdBtn_${popupCount}`).onclick = function() {
         container.remove();
         popupCount--;
     };
-    
-    // Auto remove after 12s
+
     setTimeout(() => {
         if (document.body.contains(container)) {
             container.remove();
@@ -355,7 +794,11 @@ function showDownloadPopup(filePath) {
     }, 12000);
 }
 
-// Handle select file
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
+
+// Select file button
 document.getElementById('selectFileBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.read_data('');
@@ -373,7 +816,24 @@ document.getElementById('selectFileBtn').onclick = async function() {
     }
 };
 
-// Excel export: show popup to open file
+// Calendar button
+document.getElementById('calendarBtn').onclick = function() {
+    openCalendar();
+};
+
+// Previous month button
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'prevMonthBtn' || e.target.closest('#prevMonthBtn')) {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar(currentCalendarDate);
+    }
+    if (e.target.id === 'nextMonthBtn' || e.target.closest('#nextMonthBtn')) {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar(currentCalendarDate);
+    }
+});
+
+// Excel export
 document.getElementById('exportBtn').onclick = async function() {
     if (window.pywebview) {
         const result = await window.pywebview.api.export_excel();
@@ -387,20 +847,20 @@ document.getElementById('exportBtn').onclick = async function() {
     }
 };
 
-// Export PDF repartidas and then show modal for continuous option
+// Export PDF
 document.getElementById('exportPdfBtn').onclick = async function() {
     const nProveyentes = parseInt(document.getElementById('proveyentesInput').value);
     if (!nProveyentes || nProveyentes < 1) {
         alert('Ingrese un número válido de Proveyentes.');
         return;
     }
+
     if (window.pywebview) {
         const result = await window.pywebview.api.export_pdf(nProveyentes);
         if (result && result.status === 'ok') {
             showDownloadPopup(result.path);
-            // Pre-fill modal date with last_assigned_date + 1 day if provided
+            
             if (result.last_assigned_date) {
-                // parse dd/mm/YYYY
                 const parts = result.last_assigned_date.split('/');
                 if (parts.length === 3) {
                     const d = parts[0].padStart(2,'0'), m = parts[1].padStart(2,'0'), y = parts[2];
@@ -410,11 +870,10 @@ document.getElementById('exportPdfBtn').onclick = async function() {
                     document.getElementById('continuousStartDate').value = iso;
                 }
             } else {
-                // default to tomorrow
                 const tomorrow = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
                 document.getElementById('continuousStartDate').value = tomorrow;
             }
-            // Show modal
+            
             const modalEl = document.getElementById('continuousExportModal');
             const modal = new mdb.Modal(modalEl);
             modal.show();
@@ -426,21 +885,20 @@ document.getElementById('exportPdfBtn').onclick = async function() {
     }
 };
 
-// Hook modal export button
+// Continuous export
 document.getElementById('doContinuousExportBtn').onclick = async function() {
     const startDate = document.getElementById('continuousStartDate').value;
     const nProveyentes = parseInt(document.getElementById('continuousNumListados').value) || 1;
-    
+
     if (!startDate) {
         alert('Ingrese una fecha de inicio válida.');
         return;
     }
-    
+
     if (window.pywebview) {
         const result = await window.pywebview.api.export_pdf_continuous(startDate, nProveyentes);
         if (result && result.status === 'ok') {
             showDownloadPopup(result.path);
-            // hide modal
             const modalEl = document.getElementById('continuousExportModal');
             const modal = mdb.Modal.getInstance(modalEl);
             if (modal) modal.hide();
@@ -451,43 +909,52 @@ document.getElementById('doContinuousExportBtn').onclick = async function() {
         alert('pywebview API no disponible');
     }
 };
+
 // Clear button
 document.getElementById('clearButton').onclick = function() {
     document.getElementById('summary').style.display = 'none';
-    document.getElementById('summary-text').textContent = '';
-    document.getElementById('period-header').textContent = '';
+    document.getElementById('summary-text').innerHTML = '';
+    document.getElementById('period-header').innerHTML = '';
     document.getElementById('top-titles-table').innerHTML = '';
     document.getElementById('presentaciones-by-date-table').innerHTML = '';
+    document.getElementById('calendar-container').innerHTML = '';
+    
     hideActions();
+    
     if (pieChart) pieChart.destroy();
     if (barChart) barChart.destroy();
     if (datesBarChart) datesBarChart.destroy();
+    
+    currentSummary = null;
+    rawData = null;
     animateWindowResize(1200, 933, 400);
 };
 
-// Add pywebview API methods for window size and centering
+// ============================================================================
+// PYWEBVIEW API FALLBACKS
+// ============================================================================
+
 if (window.pywebview) {
     window.pywebview.api.get_window_size = function() {
         return new Promise(resolve => {
-            // Dummy fallback if not implemented in backend
             resolve({ width: window.innerWidth, height: window.innerHeight });
         });
     };
+    
     window.pywebview.api.set_window_size = function(width, height) {
-        // Dummy fallback if not implemented in backend
         window.resizeTo(width, height);
     };
+    
     window.pywebview.api.center_window = function(width, height) {
-        // Dummy fallback if not implemented in backend
         const screenW = window.screen.width;
         const screenH = window.screen.height;
         const x = Math.max(0, Math.round((screenW - width) / 2));
         const y = Math.max(0, Math.round((screenH - height) / 2));
         window.moveTo(x, y);
     };
+    
     window.pywebview.api.open_file = window.pywebview.api.open_file || function(path) {
         return new Promise(resolve => {
-            // Fallback: try to open in new tab if path is a file:// URL (best-effort)
             try {
                 window.open("file://" + path);
             } catch (e) {}
@@ -495,3 +962,7 @@ if (window.pywebview) {
         });
     };
 }
+
+// Make functions globally available for onclick handlers
+window.showDateRecords = showDateRecords;
+window.showTitleRecords = showTitleRecords;

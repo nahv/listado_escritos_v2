@@ -2,354 +2,720 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Listado de escritos</title>
+    <title>Listado de escritos - Dashboard Profesional</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <!-- MDB UI Kit CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
     <style>
-      /* Enhanced Splash screen overlay */
-      #splash {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, #003366 0%, #004d99 50%, #003d7a 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-family: 'Roboto', sans-serif;
-        z-index: 9999;
-        opacity: 1;
-        transition: opacity 0.8s ease;
-      }
-      
-      #splash.fade-out {
-        opacity: 0;
-        pointer-events: none;
-      }
-      
-      body.loaded #splash {
-        display: none;
-      }
-
-      /* Splash content container */
-      #splash-content {
-        text-align: center;
-        animation: slideUp 0.8s ease-out 0.3s both;
-      }
-
-      /* Animated logo/icon */
-      #splash-icon {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 20px;
-        animation: iconPulse 2s ease-in-out infinite;
-      }
-
-      /* Title animation */
-      #splash-title {
-        font-size: 32px;
-        font-weight: 700;
-        margin: 0 0 10px 0;
-        letter-spacing: 1px;
-        animation: fadeInDown 0.8s ease-out 0.5s both;
-      }
-
-      /* Subtitle animation */
-      #splash-subtitle {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 30px;
-        animation: fadeInUp 0.8s ease-out 0.7s both;
-      }
-
-      /* Loading spinner */
-      .spinner-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        animation: fadeInUp 0.8s ease-out 0.9s both;
-      }
-
-      .spinner-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: white;
-        animation: spinnerBounce 1.4s infinite ease-in-out;
-      }
-
-      .spinner-dot:nth-child(1) {
-        animation-delay: -0.32s;
-      }
-
-      .spinner-dot:nth-child(2) {
-        animation-delay: -0.16s;
-      }
-
-      .spinner-dot:nth-child(3) {
-        animation-delay: 0s;
-      }
-
-      /* Drag and drop styles */
-      body.drag-over {
-        background-color: rgba(13, 110, 253, 0.1);
-      }
-      
-      .drag-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(13, 110, 253, 0.2);
-        backdrop-filter: blur(3px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        pointer-events: none;
-        border: 4px dashed #0d6efd;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-      
-      body.drag-over .drag-overlay {
-        opacity: 1;
-      }
-      
-      .drag-message {
-        background: white;
-        padding: 20px 40px;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #0d6efd;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-      }
-      
-      .drag-message svg {
-        width: 40px;
-        height: 40px;
-      }
-
-      /* File input for drag and drop fallback */
-      #file-input {
-        display: none;
-      }
-
-      /* Animations */
-      @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
+        /* ===== ENHANCED SPLASH SCREEN ===== */
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a2540 0%, #1a3b5c 50%, #0d2b44 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        #splash.fade-out {
+            opacity: 0;
+            pointer-events: none;
         }
-      }
+        body.loaded #splash {
+            display: none;
+        }
+        #splash-content {
+            text-align: center;
+            animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+        }
+        #splash-icon {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 24px;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 12px rgba(255,255,255,0.2));
+        }
+        #splash-title {
+            font-size: 36px;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            letter-spacing: 0.5px;
+            animation: fadeInDown 0.8s ease-out 0.5s both;
+        }
+        #splash-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 36px;
+            animation: fadeInUp 0.8s ease-out 0.7s both;
+            font-weight: 300;
+        }
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            animation: fadeInUp 0.8s ease-out 0.9s both;
+        }
+        .spinner-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+            animation: spinnerBounce 1.4s infinite ease-in-out;
+        }
+        .spinner-dot:nth-child(1) { animation-delay: -0.32s; }
+        .spinner-dot:nth-child(2) { animation-delay: -0.16s; }
+        .spinner-dot:nth-child(3) { animation-delay: 0s; }
 
-      @keyframes fadeInDown {
-        from {
-          opacity: 0;
-          transform: translateY(-20px);
+        /* ===== DRAG AND DROP STYLES ===== */
+        body.drag-over {
+            background-color: rgba(13, 110, 253, 0.05);
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        .drag-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 110, 253, 0.15);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            pointer-events: none;
+            border: 4px dashed #0d6efd;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-      }
+        body.drag-over .drag-overlay {
+            opacity: 1;
+        }
+        .drag-message {
+            background: white;
+            padding: 24px 48px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0d6efd;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .drag-message svg {
+            width: 48px;
+            height: 48px;
+        }
+        #file-input { display: none; }
 
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
+        /* ===== ENHANCED TYPOGRAPHY & SPACING ===== */
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        h2 {
+            font-weight: 600;
+            font-size: 2rem;
+            color: #0f172a;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.01em;
         }
-      }
+        h4 {
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: #334155;
+            margin-bottom: 1.25rem;
+            letter-spacing: -0.01em;
+            border-left: 4px solid #0d6efd;
+            padding-left: 1rem;
+        }
+        .container {
+            max-width: 1600px;
+            padding: 2rem;
+        }
 
-      @keyframes iconPulse {
-        0%, 100% {
-          transform: scale(1);
-          filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+        /* ===== MODERN BUTTON STYLES ===== */
+        .btn {
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        50% {
-          transform: scale(1.1);
-          filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
+        .btn-primary {
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            border: none;
         }
-      }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(13, 110, 253, 0.2);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #198754, #157347);
+            border: none;
+        }
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #ffb300);
+            border: none;
+            color: #212529;
+        }
+        .btn-outline-info {
+            color: #0dcaf0;
+            border: 2px solid #0dcaf0;
+            background: transparent;
+        }
+        .btn-outline-info:hover {
+            background: #0dcaf0;
+            color: white;
+        }
 
-      @keyframes spinnerBounce {
-        0%, 80%, 100% {
-          transform: scale(0);
-          opacity: 0.5;
+        /* ===== ENHANCED TABLE STYLES ===== */
+        .table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            margin-bottom: 1.5rem;
+            border: 1px solid #eef2f6;
         }
-        40% {
-          transform: scale(1);
-          opacity: 1;
+        .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 1rem 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
         }
-      }
+        .table tbody td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+            color: #334155;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #fafbfc;
+        }
+
+        /* ===== VIEW DETAILS BUTTON ===== */
+        .btn-view-details {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            background: #e9ecef;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s ease;
+        }
+        .btn-view-details:hover {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+        .btn-view-details i {
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+
+        /* ===== MODERN MODAL STYLES ===== */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            border-bottom: 2px solid #eef2f6;
+            padding: 1.5rem 1.5rem 1rem;
+            border-radius: 16px 16px 0 0;
+        }
+        .modal-header .modal-title {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 1.25rem;
+        }
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .modal-footer {
+            border-top: 2px solid #eef2f6;
+            padding: 1rem 1.5rem 1.5rem;
+        }
+
+        /* ===== CALENDAR OVERLAY STYLES ===== */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.85rem;
+            padding: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .calendar-day {
+            background: white;
+            border: 1px solid #eef2f6;
+            border-radius: 12px;
+            padding: 12px 8px;
+            min-height: 100px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            border-color: #0d6efd;
+        }
+        .calendar-day-number {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        .calendar-day.empty {
+            background: #f8fafc;
+            border-color: #eef2f6;
+        }
+        .calendar-day.empty:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #eef2f6;
+        }
+        .calendar-day.highlight-first {
+            background: linear-gradient(135deg, #fff3e0, #ffe4bc);
+            border-color: #ffb74d;
+        }
+        .calendar-day.highlight-first .calendar-day-number {
+            color: #ed6c02;
+        }
+        .calendar-day.highlight-today {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-color: #1976d2;
+        }
+        .calendar-day.highlight-today .calendar-day-number {
+            color: #0d47a1;
+        }
+        .record-count-badge {
+            display: inline-block;
+            background: #0d6efd;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            box-shadow: 0 2px 4px rgba(13,110,253,0.2);
+        }
+        .calendar-month-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .calendar-nav-btn {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 30px;
+            padding: 8px 16px;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+        .calendar-nav-btn:hover {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+
+        /* ===== SUMMARY CARDS ===== */
+        .summary-stats {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #eef2f6;
+        }
+        .stat-item {
+            padding: 1rem;
+            border-radius: 12px;
+            background: #f8fafc;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0d6efd;
+            line-height: 1.2;
+        }
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* ===== CHART CONTAINERS ===== */
+        .chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #eef2f6;
+            margin-bottom: 2rem;
+        }
+        canvas {
+            max-height: 300px;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,255,255,0.6)); }
+        }
+        @keyframes spinnerBounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            h2 { font-size: 1.5rem; }
+            .calendar-grid { gap: 4px; }
+            .calendar-day { min-height: 80px; padding: 8px 4px; }
+        }
     </style>
 </head>
 <body>
-    <!-- Hidden file input for drag and drop fallback -->
+    <!-- Hidden file input -->
     <input type="file" id="file-input" accept=".xlsx,.xls">
 
     <!-- Drag and drop overlay -->
     <div class="drag-overlay">
         <div class="drag-message">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
-                <path d="M4.5 6.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 10h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
-            </svg>
+            <i class="fas fa-file-excel fa-2x"></i>
             Suelte el archivo para cargarlo
         </div>
     </div>
 
     <!-- Enhanced Splash Screen -->
     <div id="splash">
-      <div id="splash-content">
-        <!-- Icon: Document/File SVG -->
-        <svg id="splash-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
-          <path d="M4.5 6.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 10h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
-        </svg>
-        
-        <h1 id="splash-title">Listado de Escritos</h1>
-        <p id="splash-subtitle">Cargando aplicación...</p>
-        
-        <!-- Loading spinner -->
-        <div class="spinner-container">
-          <div class="spinner-dot"></div>
-          <div class="spinner-dot"></div>
-          <div class="spinner-dot"></div>
+        <div id="splash-content">
+            <i class="fas fa-file-alt" id="splash-icon" style="font-size: 80px;"></i>
+            <h1 id="splash-title">Listado de Escritos</h1>
+            <p id="splash-subtitle">Dashboard profesional de gestión</p>
+            <div class="spinner-container">
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+            </div>
         </div>
-      </div>
     </div>
 
-    <div class="container mt-5 text-center">
-        <h2>Listado de escritos</h2>
-        <div class="mb-4 d-flex flex-column flex-md-row align-items-center justify-content-center" id="mainActions">
-            <button type="button" class="btn btn-primary mb-2 mb-md-0" id="selectFileBtn">Seleccionar Archivo<br>de Forum</button>
-            <button type="button" class="btn btn-success ms-2 d-none mb-2 mb-md-0" id="exportBtn">
-                Exportar listado en<br>orden cronológico
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-spreadsheet-fill ms-1" viewBox="0 0 16 16">
-                    <path d="M6 12v-2h3v2z"/>
-                    <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M3 9h10v1h-3v2h3v1h-3v2H9v-2H6v2H5v-2H3v-1h2v-2H3z"/>
-                </svg>
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-signature me-3" style="color: #0d6efd;"></i>Listado de escritos</h2>
+            <div class="text-muted">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <span id="current-date"></span>
+            </div>
+        </div>
+
+        <!-- Main Actions -->
+        <div class="mb-4 d-flex flex-wrap gap-2 align-items-center" id="mainActions">
+            <button type="button" class="btn btn-primary" id="selectFileBtn">
+                <i class="fas fa-folder-open me-2"></i>Seleccionar archivo
             </button>
-            <button type="button" class="btn btn-secondary ms-2 d-none mb-2 mb-md-0" id="clearButton">
-                Limpiar
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3 ms-1" viewBox="0 0 16 16">
-                    <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
-                </svg>
+            <button type="button" class="btn btn-success d-none" id="exportBtn">
+                <i class="fas fa-file-excel me-2"></i>Exportar listado cronológico
+            </button>
+            <button type="button" class="btn btn-outline-info d-none" id="calendarBtn">
+                <i class="fas fa-calendar-alt me-2"></i>Ver calendario
+            </button>
+            <button type="button" class="btn btn-secondary d-none" id="clearButton">
+                <i class="fas fa-trash-alt me-2"></i>Limpiar
             </button>
         </div>
-        <!-- Proveyentes section-->
-        <div id="proveyentesSection" class="d-none mt-4 p-3 border rounded shadow-sm bg-light" style="max-width: 700px; margin: 0 auto;">
-            <div class="d-flex align-items-center justify-content-center">
-                <span class="me-2 fw-bold">Repartir fechas en</span>
-                <input type="number" min="1" value="1" class="form-control d-inline-block w-auto mx-2" id="proveyentesInput" style="width: 70px;">
-                <span class="ms-2 fw-bold">listados</span>
-                <button type="button" class="btn btn-warning ms-3" id="exportPdfBtn">
-                    Exportar PDF
+
+        <!-- Proveyentes Section -->
+        <div id="proveyentesSection" class="d-none mt-4 p-4 bg-white rounded-4 shadow-sm" style="max-width: 700px; margin: 0 auto;">
+            <div class="d-flex align-items-center justify-content-center flex-wrap gap-3">
+                <span class="fw-semibold"><i class="fas fa-users me-2"></i>Repartir fechas en</span>
+                <input type="number" min="1" value="1" class="form-control d-inline-block" id="proveyentesInput" style="width: 80px;">
+                <span class="fw-semibold">listados</span>
+                <button type="button" class="btn btn-warning" id="exportPdfBtn">
+                    <i class="fas fa-file-pdf me-2"></i>Exportar PDF
                 </button>
             </div>
         </div>
+
+        <!-- Summary Section -->
+        <div id="summary" style="display: none;">
+            <!-- Period and Stats -->
+            <div class="summary-stats">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h4 id="period-header" class="mb-3"></h4>
+                        <div id="summary-text" class="stat-number"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <canvas id="pieChart" style="max-width: 300px; max-height: 300px; margin: 0 auto;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presentaciones por fecha Section -->
+            <div class="row mt-5">
+                <div class="col-lg-6">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4><i class="fas fa-calendar-check me-2"></i>Presentaciones por fecha</h4>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" style="font-size: 0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th class="text-center">Escritos</th>
+                                    <th class="text-center">Proyectos</th>
+                                    <th class="text-center">Total</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="presentaciones-by-date-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <canvas id="datesBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escritos más frecuentes Section -->
+            <div class="row mt-5">
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-chart-bar me-2"></i>Escritos más frecuentes</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" style="font-size: 0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-titles-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <canvas id="topTitlesBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="summary" class="container mt-5" style="display: none; color: hsl(210, 8%, 31%);">
-        <div class="row mt-4">
-            <div class="col">
-                <h4 id="period-header" class="text-end col"></h4>
-                <h4 id="summary-text" class="text-end"></h4>
-            </div>
-            <div class="col ms-5">
-                <canvas id="pieChart" style="max-width: 300px; max-height: 300px;"></canvas>
+    <!-- Modal for Date Records -->
+    <div class="modal fade" id="dateRecordsModal" tabindex="-1" aria-labelledby="dateRecordsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dateRecordsModalLabel">
+                        <i class="fas fa-calendar-day me-2"></i>Registros del <span id="selected-date-display"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover" id="date-records-table">
+                            <thead>
+                                <tr>
+                                    <th>Expediente</th>
+                                    <th>Título</th>
+                                    <th>Tipo</th>
+                                    <th>Presentante</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cerrar
+                    </button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="mt-5 d-flex">
-            <div class="w-50">
-                <h4>Cantidad de presentaciones por fecha</h4>
-                <table class="table table" style="font-size: 0.9rem;">
-                    <thead>
-                        <tr>
-                            <th>Cargo</th>
-                            <th>Escritos</th>
-                            <th>Proyectos</th>
-                            <th><strong>Total</strong></th>
-                        </tr>
-                    </thead>
-                    <tbody id="presentaciones-by-date-table">
-                        <!-- Rows will be dynamically added here -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="w-50 mt-5 ms-4">
-                <canvas id="datesBarChart"></canvas>
+    <!-- Modal for Title Records -->
+    <div class="modal fade" id="titleRecordsModal" tabindex="-1" aria-labelledby="titleRecordsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="titleRecordsModalLabel">
+                        <i class="fas fa-file-alt me-2"></i>Registros con título: <span id="selected-title-display"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover" id="title-records-table">
+                            <thead>
+                                <tr>
+                                    <th>Expediente</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Presentante</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cerrar
+                    </button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="mt-5 d-flex">
-            <div class="w-50">
-                <h4>Escritos más frecuentes</h4>
-                <table class="table table-striped" style="font-size: 0.9rem;">
-                    <thead>
-                        <tr>
-                            <th>Suma</th>
-                            <th>Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="top-titles-table">
-                        <!-- Rows will be dynamically added here -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="w-50 mt-5 ms-4">
-                <canvas id="topTitlesBarChart"></canvas>
+    <!-- Modal for Calendar Overlay -->
+    <div class="modal fade" id="calendarModal" tabindex="-1" aria-labelledby="calendarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="calendarModalLabel">
+                        <i class="fas fa-calendar-alt me-2"></i>Calendario de presentaciones
+                    </h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="calendar-month-title">
+                            <button class="calendar-nav-btn" id="prevMonthBtn">
+                                <i class="fas fa-chevron-left me-2"></i>Mes anterior
+                            </button>
+                            <span id="currentMonthDisplay">Enero 2024</span>
+                            <button class="calendar-nav-btn" id="nextMonthBtn">
+                                Mes siguiente<i class="fas fa-chevron-right ms-2"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <span class="badge bg-warning-subtle text-warning-emphasis p-2">
+                                <i class="fas fa-star me-1"></i>Primer registro
+                            </span>
+                            <span class="badge bg-info-subtle text-info-emphasis p-2">
+                                <i class="fas fa-calendar-check me-1"></i>Hoy
+                            </span>
+                        </div>
+                    </div>
+                    <div id="calendar-container"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Modal for continuous export -->
     <div class="modal fade" id="continuousExportModal" tabindex="-1" aria-labelledby="continuousExportLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="continuousExportLabel">Exportar el resto de las fechas en orden cronológico</h5>
-            <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="continuousStartDate" class="form-label">Fecha inicio</label>
-              <input type="date" id="continuousStartDate" class="form-control">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="continuousExportLabel">
+                        <i class="fas fa-file-pdf me-2"></i>Exportar resto de fechas
+                    </h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="continuousStartDate" class="form-label">Fecha inicio</label>
+                        <input type="date" id="continuousStartDate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="continuousNumListados" class="form-label">Cantidad de Listados</label>
+                        <input type="number" id="continuousNumListados" class="form-control" min="1" value="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="doContinuousExportBtn" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Exportar PDF
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                </div>
             </div>
-            <div class="mb-3">
-              <label for="continuousNumListados" class="form-label">Cantidad de Listados</label>
-              <input type="number" id="continuousNumListados" class="form-control" min="1" value="1">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" id="doContinuousExportBtn" class="btn btn-primary">Exportar PDF</button>
-            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Cancelar</button>
-          </div>
         </div>
-      </div>
     </div>
 
     <script src="app.js"></script>
@@ -357,112 +723,100 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.js"></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-      // Hide splash once everything is loaded
-      window.addEventListener("load", () => {
-        const splash = document.getElementById("splash");
-        splash.classList.add("fade-out");
-        setTimeout(() => {
-          document.body.classList.add("loaded");
-        }, 800); // match transition duration
-      });
+        // Hide splash once everything is loaded
+        window.addEventListener("load", () => {
+            const splash = document.getElementById("splash");
+            splash.classList.add("fade-out");
+            setTimeout(() => {
+                document.body.classList.add("loaded");
+            }, 800);
 
-      // Drag and drop functionality
-      (function() {
-        const body = document.body;
-        const fileInput = document.getElementById('file-input');
-        
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-          body.addEventListener(eventName, preventDefaults, false);
-          document.addEventListener(eventName, preventDefaults, false);
+            // Set current date
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('es-ES', options);
         });
-        
-        function preventDefaults(e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        
-        // Highlight drop area when dragging over
-        ['dragenter', 'dragover'].forEach(eventName => {
-          body.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-          body.addEventListener(eventName, unhighlight, false);
-        });
-        
-        function highlight() {
-          body.classList.add('drag-over');
-        }
-        
-        function unhighlight() {
-          body.classList.remove('drag-over');
-        }
-        
-        // Handle dropped files
-        body.addEventListener('drop', handleDrop, false);
-        
-        async function handleDrop(e) {
-          const dt = e.dataTransfer;
-          const files = dt.files;
-          
-          if (files.length > 0) {
-            const file = files[0];
-            // Check if it's an Excel file
-            if (file.name.match(/\.xlsx?$/i)) {
-              console.log('File dropped:', file.name);
-              
-              // Show loading state
-              const selectBtn = document.getElementById('selectFileBtn');
-              const originalText = selectBtn.innerHTML;
-              selectBtn.innerHTML = 'Cargando...';
-              selectBtn.disabled = true;
-              
-              try {
-                // Read the file as base64
-                const reader = new FileReader();
-                
-                const fileContent = await new Promise((resolve, reject) => {
-                  reader.onload = () => {
-                    // Get base64 content (remove the data URL prefix)
-                    const base64 = reader.result.split(',')[1];
-                    resolve({
-                      name: file.name,
-                      content: base64
-                    });
-                  };
-                  reader.onerror = () => reject(reader.error);
-                  reader.readAsDataURL(file);
-                });
-                
-                // Send the file content to the backend
-                const result = await window.pywebview.api.read_file_from_memory(fileContent.name, fileContent.content);
-                
-                if (result && result.status === 'ok') {
-                  document.getElementById('summary').style.display = 'block';
-                  const summary = parseSummary(result);
-                  renderDashboard(summary);
-                  showActions();
-                  animateWindowResize(1400, 1000, 400);
-                } else {
-                  alert(result.message || 'No se pudo leer el archivo.');
-                }
-              } catch (error) {
-                console.error('Error loading dropped file:', error);
-                alert('Error al cargar el archivo: ' + error.message);
-              } finally {
-                // Restore button state
-                selectBtn.innerHTML = originalText;
-                selectBtn.disabled = false;
-              }
-            } else {
-              alert('Por favor, seleccione un archivo Excel (.xlsx)');
+
+        // Drag and drop functionality
+        (function() {
+            const body = document.body;
+            const fileInput = document.getElementById('file-input');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                body.addEventListener(eventName, preventDefaults, false);
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
-          }
-        }
-      })();
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                body.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                body.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                body.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                body.classList.remove('drag-over');
+            }
+
+            body.addEventListener('drop', handleDrop, false);
+
+            async function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.match(/\.xlsx?$/i)) {
+                        console.log('File dropped:', file.name);
+                        const selectBtn = document.getElementById('selectFileBtn');
+                        const originalText = selectBtn.innerHTML;
+                        selectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cargando...';
+                        selectBtn.disabled = true;
+
+                        try {
+                            const reader = new FileReader();
+                            const fileContent = await new Promise((resolve, reject) => {
+                                reader.onload = () => {
+                                    const base64 = reader.result.split(',')[1];
+                                    resolve({ name: file.name, content: base64 });
+                                };
+                                reader.onerror = () => reject(reader.error);
+                                reader.readAsDataURL(file);
+                            });
+
+                            const result = await window.pywebview.api.read_file_from_memory(fileContent.name, fileContent.content);
+                            if (result && result.status === 'ok') {
+                                document.getElementById('summary').style.display = 'block';
+                                const summary = parseSummary(result);
+                                renderDashboard(summary);
+                                showActions();
+                                animateWindowResize(1400, 1000, 400);
+                            } else {
+                                alert(result.message || 'No se pudo leer el archivo.');
+                            }
+                        } catch (error) {
+                            console.error('Error loading dropped file:', error);
+                            alert('Error al cargar el archivo: ' + error.message);
+                        } finally {
+                            selectBtn.innerHTML = originalText;
+                            selectBtn.disabled = false;
+                        }
+                    } else {
+                        alert('Por favor, seleccione un archivo Excel (.xlsx)');
+                    }
+                }
+            }
+        })();
     </script>
 </body>
 </html>
