@@ -577,6 +577,70 @@
             font-style: italic;
             font-size: 1rem;
         }
+        /* ===== MAKE MODAL TABLES TEXT SELECTABLE ===== */
+/* Override any default selection restrictions */
+#dateRecordsModal .modal-body,
+#dateRecordsModal .table,
+#dateRecordsModal .table td,
+#dateRecordsModal .table th,
+#dateRecordsModal .table tbody,
+#dateRecordsModal .table thead,
+#dateRecordsModal .modal-content,
+#titleRecordsModal .modal-body,
+#titleRecordsModal .table,
+#titleRecordsModal .table td,
+#titleRecordsModal .table th,
+#titleRecordsModal .table tbody,
+#titleRecordsModal .table thead,
+#titleRecordsModal .modal-content {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+}
+
+/* Visual feedback for selectable text */
+#dateRecordsModal .table td:hover,
+#titleRecordsModal .table td:hover {
+    background-color: rgba(13, 110, 253, 0.08) !important;
+    cursor: text;
+}
+
+/* Style for selected text */
+#dateRecordsModal .table td::selection,
+#titleRecordsModal .table td::selection {
+    background-color: #3390ff;
+    color: white;
+}
+
+#dateRecordsModal .table td::-moz-selection,
+#titleRecordsModal .table td::-moz-selection {
+    background-color: #3390ff;
+    color: white;
+}
+
+/* Ensure modal doesn't block selection events */
+#dateRecordsModal .modal-body,
+#titleRecordsModal .modal-body {
+    pointer-events: auto !important;
+}
+
+/* Optional: Add a subtle indicator that text is copyable */
+#dateRecordsModal .table td:after,
+#titleRecordsModal .table td:after {
+    content: '';
+    display: none;
+}
+
+/* Ensure the export button doesn't interfere with selection */
+#dateRecordsModal .btn,
+#titleRecordsModal .btn {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
     </style>
 </head>
 <body>
