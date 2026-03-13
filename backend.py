@@ -370,13 +370,20 @@ class Api:
 
     def create_listados(self, data):
         today_date = datetime.now()
-        data['Recibido'] = pd.to_datetime(data['Recibido'])
-        data['DaysDifference'] = (today_date - data['Recibido']).dt.days
-        data['Recibido'] = pd.to_datetime(data['Recibido']).dt.strftime('%d/%m/%y')
+        # Convert to datetime and calculate days difference
+        data['Recibido_dt'] = pd.to_datetime(data['Recibido'])
+        data['DaysDifference'] = (today_date - data['Recibido_dt']).dt.days
+        # Format date consistently as dd/mm/yy
+        data['Recibido_formatted'] = data['Recibido_dt'].dt.strftime('%d/%m/%y')
+        
         listados = []
         for index, row in data.iterrows():
             fifth_column_string = f"{row['DaysDifference']} días al {today_date.strftime('%d/%m')}"
-            listados.append((row['Título'], row['Expte'], row['Recibido'], row['Apellido'], fifth_column_string))
+            # Use the pre-formatted date
+            listados.append((row['Título'], row['Expte'], row['Recibido_formatted'], row['Apellido'], fifth_column_string))
+        
+        # Clean up temporary columns
+        data.drop(['Recibido_dt', 'Recibido_formatted'], axis=1, inplace=True, errors='ignore')
         return listados
 
     def save_listados_to_excel(self, listados, filename):
@@ -466,20 +473,21 @@ class Api:
             listados = self.create_listados(self.data)
             total_needed = n_proveyentes * 15
             selected_records = listados[:total_needed]
+            
+            # Validate and fix dates before processing
+            selected_records = self._validate_and_fix_dates(selected_records)
+            
             # Track last split index and last assigned date
             self.last_split_index = min(total_needed, len(listados))
-            # Determine last assigned date among selected records (parse dd/mm/yy)
+            
+            # Determine last assigned date among selected records
             try:
                 dates = []
                 for r in selected_records:
-                    # r[2] is Recibido like 'dd/mm/yy' from create_listados
                     try:
                         dates.append(datetime.strptime(r[2], "%d/%m/%y"))
                     except:
-                        try:
-                            dates.append(datetime.strptime(r[2], "%d/%m/%Y"))
-                        except:
-                            pass
+                        pass
                 if dates:
                     self.last_assigned_date = max(dates)
                 else:
@@ -550,6 +558,40 @@ class Api:
         except Exception as e:
             return {"status": "error", "message": f"Error al exportar PDF: {e}"}
 
+    def _validate_and_fix_dates(self, records):
+        """
+        Helper method to validate and fix date formats in records
+        Ensures all dates are in dd/mm/yy format
+        """
+        fixed_records = []
+        for record in records:
+            # record[2] should be the date
+            date_str = record[2]
+            try:
+                # Try to parse as dd/mm/yy
+                parsed_date = datetime.strptime(date_str, "%d/%m/%y")
+                # Reformat to ensure consistency
+                fixed_date = parsed_date.strftime("%d/%m/%y")
+                
+                # Create a new record with the fixed date
+                fixed_record = list(record)
+                fixed_record[2] = fixed_date
+                fixed_records.append(tuple(fixed_record))
+            except ValueError:
+                # If parsing fails, try with full year format
+                try:
+                    parsed_date = datetime.strptime(date_str, "%d/%m/%Y")
+                    fixed_date = parsed_date.strftime("%d/%m/%y")
+                    fixed_record = list(record)
+                    fixed_record[2] = fixed_date
+                    fixed_records.append(tuple(fixed_record))
+                except ValueError:
+                    # If all parsing fails, log warning and keep original
+                    print(f"WARNING: Could not parse date: {date_str}, keeping original")
+                    fixed_records.append(record)
+        
+        return fixed_records
+
     def export_pdf_continuous(self, start_date_str, n_proveyentes, per_list=15):
         """
         Export continuous lists starting from start_date_str, taking records after last_split_index,
@@ -589,8 +631,10 @@ class Api:
                         return {"status": "error", "message": f"Formato de fecha inválido: {start_date_str}"}
             
             # IMPORTANT: Use the same listados that export_pdf uses, but continue from last_split_index
-            # This ensures we don't reprocess records that were already assigned
             listados = self.create_listados(self.data)
+            
+            # Validate and fix all dates in listados to ensure consistency
+            listados = self._validate_and_fix_dates(listados)
             
             # Get the starting index from where we left off
             start_idx = getattr(self, 'last_split_index', 0)
@@ -603,15 +647,18 @@ class Api:
             if not remaining:
                 return {"status": "error", "message": "No hay más registros para exportar."}
             
-            # Calculate how many records we need (n_proveyentes * 15)
+            # Calculate how many records we need (n_proveyentes * per_list)
             total_needed = n_proveyentes * per_list
             print(f"Total needed: {total_needed}")
             
             selected_records = remaining[:total_needed]
             print(f"Selected records: {len(selected_records)}")
             
+            # Additional validation on selected records
+            selected_records = self._validate_and_fix_dates(selected_records)
+            
             # Distribute records sequentially to each listado
-            # Group 1: records 0-14, Group 2: records 15-29, etc.
+            # Group 1: records 0-(per_list-1), Group 2: records per_list-(2*per_list-1), etc.
             sequential_groups = []
             for i in range(0, len(selected_records), per_list):
                 group = selected_records[i:i + per_list]
@@ -716,6 +763,7 @@ class Api:
             
             # Update last_split_index to reflect consumed records
             self.last_split_index = start_idx + len(selected_records)
+            
             # Get the last date from the selected records for tracking
             try:
                 dates = []
@@ -723,10 +771,7 @@ class Api:
                     try:
                         dates.append(datetime.strptime(r[2], "%d/%m/%y"))
                     except:
-                        try:
-                            dates.append(datetime.strptime(r[2], "%d/%m/%Y"))
-                        except:
-                            pass
+                        pass
                 if dates:
                     self.last_assigned_date = max(dates)
                 else:
@@ -750,7 +795,7 @@ class Api:
             return {"status": "error", "message": f"Error al exportar PDF continuo: {e}"}
 
     # ============================================================================
-    # NEW METHOD FOR STATIC HTML EXPORT
+    # METHOD FOR STATIC HTML EXPORT
     # ============================================================================
     
     def export_static_html(self, data):
