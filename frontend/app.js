@@ -1,5 +1,5 @@
 // ============================================================================
-// app.js - Enhanced version with Static HTML Export
+// app.js - Enhanced version with Static HTML Export (Bootstrap 5 Native)
 // ============================================================================
 
 let pieChart, barChart, datesBarChart;
@@ -507,7 +507,8 @@ function renderDatesBarChart(labels, data) {
 // ============================================================================
 
 function openCalendar() {
-    const modal = new mdb.Modal(document.getElementById('calendarModal'));
+    const modalEl = document.getElementById('calendarModal');
+    const modal = new bootstrap.Modal(modalEl);
     renderCalendar(currentCalendarDate);
     modal.show();
 }
@@ -624,19 +625,21 @@ function renderCalendar(date) {
 }
 
 // ============================================================================
-// MODAL FOR DATE RECORDS - Fixed z-index issue
+// MODAL FOR DATE RECORDS - Bootstrap 5 Native
 // ============================================================================
 
 async function showDateRecords(dateStr) {
-    // First, hide the calendar modal
-    const calendarModal = mdb.Modal.getInstance(document.getElementById('calendarModal'));
+    // First, hide the calendar modal if it's open
+    const calendarModalEl = document.getElementById('calendarModal');
+    const calendarModal = bootstrap.Modal.getInstance(calendarModalEl);
     if (calendarModal) {
         calendarModal.hide();
     }
     
     // Small delay to ensure calendar modal is hidden
     setTimeout(async () => {
-        const modal = new mdb.Modal(document.getElementById('dateRecordsModal'));
+        const modalEl = document.getElementById('dateRecordsModal');
+        const modal = new bootstrap.Modal(modalEl);
         document.getElementById('selected-date-display').textContent = dateStr;
 
         const tableBody = document.querySelector('#date-records-table tbody');
@@ -683,11 +686,12 @@ async function showDateRecords(dateStr) {
 }
 
 // ============================================================================
-// MODAL FOR TITLE RECORDS - With REAL DATA
+// MODAL FOR TITLE RECORDS - Bootstrap 5 Native
 // ============================================================================
 
 async function showTitleRecords(title) {
-    const modal = new mdb.Modal(document.getElementById('titleRecordsModal'));
+    const modalEl = document.getElementById('titleRecordsModal');
+    const modal = new bootstrap.Modal(modalEl);
     document.getElementById('selected-title-display').textContent = title;
 
     const tableBody = document.querySelector('#title-records-table tbody');
@@ -734,10 +738,6 @@ async function showTitleRecords(title) {
 
 // ============================================================================
 // EXPORT STATIC HTML DASHBOARD
-// ============================================================================
-
-// ============================================================================
-// EXPORT STATIC HTML DASHBOARD - Updated with full records
 // ============================================================================
 
 async function exportStaticDashboard() {
@@ -855,31 +855,6 @@ function formatDateForFilename(date) {
     return `${year}${month}${day}_${hours}${minutes}`;
 }
 
-function downloadStaticDashboard(htmlContent) {
-    // Create blob and download
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dashboard_${formatDateForFilename(new Date())}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    // Show success message
-    alert('Dashboard exportado correctamente como archivo HTML.');
-}
-
-function formatDateForFilename(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}${month}${day}_${hours}${minutes}`;
-}
-
 function generateStaticHTML(data) {
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const summary = data.summary;
@@ -905,11 +880,9 @@ function generateStaticHTML(data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Listado de Escritos (Exportado)</title>
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <!-- MDB UI Kit CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.css">
+    <link rel="stylesheet" href="vendor/bootstrap.min.css">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="vendor/all.min.css">
     <style>
         body {
             background-color: #f8fafc;
@@ -1592,9 +1565,10 @@ function generateStaticHTML(data) {
         </div>
     </div>
 
-    <!-- Bootstrap JS and MDB -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="vendor/chart.umd.min.js"></script>
     
     <script>
         // ============================================================================
@@ -1751,11 +1725,12 @@ function generateStaticHTML(data) {
         }
 
         // ============================================================================
-        // MODAL FUNCTIONS
+        // MODAL FUNCTIONS - Bootstrap 5 Native
         // ============================================================================
         
         function showDateRecords(dateStr) {
-            const modal = new bootstrap.Modal(document.getElementById('dateRecordsModal'));
+            const modalEl = document.getElementById('dateRecordsModal');
+            const modal = new bootstrap.Modal(modalEl);
             document.getElementById('selected-date-display').textContent = dateStr;
 
             const tableBody = document.querySelector('#date-records-table tbody');
@@ -1786,7 +1761,8 @@ function generateStaticHTML(data) {
         }
 
         function showTitleRecords(title) {
-            const modal = new bootstrap.Modal(document.getElementById('titleRecordsModal'));
+            const modalEl = document.getElementById('titleRecordsModal');
+            const modal = new bootstrap.Modal(modalEl);
             document.getElementById('selected-title-display').textContent = title;
 
             const tableBody = document.querySelector('#title-records-table tbody');
@@ -2149,7 +2125,7 @@ document.getElementById('exportPdfBtn').onclick = async function() {
             }
             
             const modalEl = document.getElementById('continuousExportModal');
-            const modal = new mdb.Modal(modalEl);
+            const modal = new bootstrap.Modal(modalEl);
             modal.show();
         } else {
             alert(result.message || 'Error al exportar PDF.');
@@ -2173,7 +2149,7 @@ document.getElementById('doContinuousExportBtn').onclick = async function() {
         if (result && result.status === 'ok') {
             showDownloadPopup(result.path, 'PDF');
             const modalEl = document.getElementById('continuousExportModal');
-            const modal = mdb.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
         } else {
             alert(result.message || 'Error al exportar PDF continuo.');

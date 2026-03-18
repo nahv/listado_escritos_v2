@@ -7,15 +7,26 @@ datas = [
     ('frontend/index.html', 'frontend'),
     ('frontend/app.js', 'frontend'),
     ('frontend/style.css', 'frontend'),
+    ('frontend/vendor/bootstrap.min.css', 'frontend/vendor'),
+    ('frontend/vendor/bootstrap.bundle.min.js', 'frontend/vendor'),
+    ('frontend/vendor/all.min.css', 'frontend/vendor'),
+    ('frontend/vendor/chart.umd.min.js', 'frontend/vendor'),
 ]
 
-# Hidden imports
+# Hidden imports - ensure all reportlab modules are included
 hiddenimports = [
     'backend',
     'pandas',
     'openpyxl',
     'reportlab',
     'reportlab.lib',
+    'reportlab.lib.pagesizes',
+    'reportlab.lib.styles',
+    'reportlab.lib.colors',
+    'reportlab.platypus',
+    'reportlab.platypus.tables',
+    'reportlab.platypus.paragraph',
+    'reportlab.pdfbase',
     'reportlab.pdfbase._fontdata',
     'reportlab.pdfbase.ttfonts',
     'webview.platforms.winforms',
@@ -24,6 +35,9 @@ hiddenimports = [
     'numpy',
     'numpy._distributor_init',
     'numpy.core._multiarray_umath',
+    'pandas._libs.tslibs.timedeltas',
+    'pandas._libs.tslibs.np_datetime',
+    'pandas._libs.tslibs.timezones',
 ]
 
 # Platform-specific DLLs (if needed)
@@ -60,7 +74,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # No console window for GUI app
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
